@@ -1,5 +1,9 @@
 # Blassistant, a Blablador Nextcloud Assistant fork
 [![build](https://github.com/mwinkens/assistant/actions/workflows/build-fork.yml/badge.svg?branch=main)](https://github.com/mwinkens/assistant/actions/workflows/build-fork.yml)
+[![Lint php-cs](https://github.com/mwinkens/assistant/actions/workflows/lint-php-cs.yml/badge.svg)](https://github.com/mwinkens/assistant/actions/workflows/lint-php-cs.yml)
+[![PHPUnit](https://github.com/mwinkens/assistant/actions/workflows/phpunit.yml/badge.svg)](https://github.com/mwinkens/assistant/actions/workflows/phpunit.yml)
+[![Psalm static analysis](https://github.com/mwinkens/assistant/actions/workflows/psalm.yml/badge.svg)](https://github.com/mwinkens/assistant/actions/workflows/psalm.yml)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/mwinkens/assistant/issues)
 
 This Assistant is a blablador themed version of the nextcloud assistant.
 [Blablador](https://helmholtz-blablador.fz-juelich.de/) is an experimental large language model by Helmholtz AI Jülich.
