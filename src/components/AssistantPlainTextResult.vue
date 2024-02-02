@@ -1,8 +1,8 @@
 <template>
 	<div class="plain-text-result">
 		<span class="assistant-bubble">
-			<CreationIcon :size="16" class="icon" />
-			<span>{{ t('assistant', 'Nextcloud Assistant') }}</span>
+			<DogIcon :size="16" class="icon" />
+			<span>{{ 'Blablador' }}</span>
 		</span>
 		<h2>
 			{{ taskCategoryName }}
@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import CreationIcon from 'vue-material-design-icons/Creation.vue'
+import DogIcon from 'vue-material-design-icons/Dog.vue'
 import ClipboardCheckOutlineIcon from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import ContentCopyIcon from 'vue-material-design-icons/ContentCopy.vue'
 
@@ -72,7 +72,7 @@ export default {
 		NcButton,
 		NcRichContenteditable,
 		NcNoteCard,
-		CreationIcon,
+		DogIcon,
 		ClipboardCheckOutlineIcon,
 		ContentCopyIcon,
 	},
