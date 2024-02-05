@@ -17,7 +17,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/mwinkens/assistant"
+		"url": "https://github.com/EUDAT-B2DROP/assistant"
 	},
 	"keywords": [
 		"artificial intelligence",
@@ -26,9 +26,9 @@
 	"author": "Julien Veyssier, Marvin Winkens",
 	"license": "AGPL-3.0",
 	"bugs": {
-		"url": "https://github.com/mwinkens/assistant/issues"
+		"url": "https://github.com/EUDAT-B2DROP/assistant/issues"
 	},
-	"homepage": "https://github.com/mwinkens/assistant",
+	"homepage": "https://github.com/EUDAT-B2DROP/assistant",
 	"browserslist": [
 		"extends @nextcloud/browserslist-config"
 	],

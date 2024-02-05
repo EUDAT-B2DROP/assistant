@@ -40,14 +40,14 @@ include text processing providers to:
 	<author>Julien Veyssier</author>
 	<namespace>TpAssistant</namespace>
 	<documentation>
-		<developer>https://github.com/mwinkens/assistant</developer>
+		<developer>https://github.com/EUDAT-B2DROP/assistant</developer>
 	</documentation>
 	<category>integration</category>
-	<website>https://github.com/mwinkens/assistant</website>
-	<bugs>https://github.com/mwinkens/assistant/issues</bugs>
-	<screenshot>https://github.com/mwinkens/assistant/raw/main/img/screenshot1.jpg</screenshot>
-	<screenshot>https://github.com/mwinkens/assistant/raw/main/img/screenshot2.jpg</screenshot>
-	<screenshot>https://github.com/mwinkens/assistant/raw/main/img/screenshot3.jpg</screenshot>
+	<website>https://github.com/EUDAT-B2DROP/assistant</website>
+	<bugs>https://github.com/EUDAT-B2DROP/assistant/issues</bugs>
+	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot1.jpg</screenshot>
+	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot2.jpg</screenshot>
+	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot3.jpg</screenshot>
 	<background-jobs>
 		<job>OCA\TpAssistant\Cron\CleanupImageGenerations</job>
 		<job>OCA\TpAssistant\Cron\CleanupAssistantTasks</job>
