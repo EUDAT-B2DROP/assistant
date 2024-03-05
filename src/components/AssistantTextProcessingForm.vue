@@ -10,7 +10,7 @@
 		<TaskTypeSelect
 			:value.sync="mySelectedTaskTypeId"
 			class="task-custom-select"
-			:inline="3"
+			:inline="5"
 			:options="taskTypes" />
 		<h2 v-if="selectedTaskType"
 			class="task-name">
@@ -35,7 +35,7 @@
 			</label>
 			<div v-if="mySelectedTaskTypeId === 'OCP\\TextToImage\\Task'"
 				ref="output">
-				<a :href="formattedOutput">{{ formattedOutput }}</a>
+				<a :href="formattedOutput" class="external">{{ formattedOutput }}</a>
 				<Text2ImageDisplay
 					:image-gen-id="myOutput" />
 			</div>
@@ -65,35 +65,43 @@
 			</NcNoteCard>
 		</div>
 		<div class="footer">
-			<NcButton
-				v-if="showSubmit"
-				:type="submitButtonType"
-				class="submit-button"
-				:disabled="!canSubmit"
-				:title="t('assistant', 'Run a task')"
-				@click="onSyncSubmit">
-				{{ syncSubmitButtonLabel }}
+			<NcButton class="history-button"
+				:type="showHistory ? 'secondary' : 'tertiary'"
+				:aria-label="showHistory ? t('assistant', 'Hide previous tasks') : t('assistant', 'Show previous tasks')"
+				@click="showHistory = !showHistory">
 				<template #icon>
-					<NcLoadingIcon v-if="loading" />
-					<DogIcon v-else />
+					<HistoryIcon />
 				</template>
+				{{ t('assistant', 'Previous "{taskTypeName}" tasks', { taskTypeName: selectedTaskType.name }) }}
 			</NcButton>
-			<NcButton
-				v-if="hasOutput"
-				type="primary"
-				class="copy-button"
-				:title="t('assistant', 'Copy output')"
-				@click="onCopy">
-				{{ t('assistant', 'Copy') }}
-				<template #icon>
-					<ClipboardCheckOutlineIcon v-if="copied" />
-					<ContentCopyIcon v-else />
-				</template>
-			</NcButton>
-			<div v-if="hasOutput"
-				class="action-buttons">
+			<div class="footer--action-buttons">
 				<NcButton
-					v-for="(b, i) in actionButtons"
+					v-if="showSubmit"
+					:type="submitButtonType"
+					class="submit-button"
+					:disabled="!canSubmit"
+					:title="t('assistant', 'Run a task')"
+					@click="onSyncSubmit">
+					{{ syncSubmitButtonLabel }}
+					<template #icon>
+						<NcLoadingIcon v-if="loading" />
+						<CreationIcon v-else />
+					</template>
+				</NcButton>
+				<NcButton
+					v-if="hasOutput"
+					type="primary"
+					class="copy-button"
+					:title="t('assistant', 'Copy output')"
+					@click="onCopy">
+					{{ t('assistant', 'Copy') }}
+					<template #icon>
+						<ClipboardCheckOutlineIcon v-if="copied" />
+						<ContentCopyIcon v-else />
+					</template>
+				</NcButton>
+				<NcButton
+					v-for="(b, i) in actionButtonsToShow"
 					:key="i"
 					:type="b.type ?? 'secondary'"
 					:title="b.title"
@@ -104,6 +112,13 @@
 					</template>
 				</NcButton>
 			</div>
+		</div>
+		<div class="history">
+			<TaskList v-if="showHistory"
+				class="history--list"
+				:task-type="mySelectedTaskTypeId"
+				@try-again="$emit('try-again', $event)"
+				@load-task="$emit('load-task', $event)" />
 		</div>
 		<div class="blabla">
 			<span>
@@ -143,6 +158,7 @@
 import ContentCopyIcon from 'vue-material-design-icons/ContentCopy.vue'
 import ClipboardCheckOutlineIcon from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import DogIcon from 'vue-material-design-icons/Dog.vue'
+import HistoryIcon from 'vue-material-design-icons/History.vue'
 
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
@@ -153,6 +169,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/dist/Components/NcIconSvgWrapper.js
 import TaskTypeSelect from './TaskTypeSelect.vue'
 import AssistantFormInputs from './AssistantFormInputs.vue'
 import Text2ImageDisplay from './Text2Image/Text2ImageDisplay.vue'
+import TaskList from './TaskList.vue'
 
 import axios from '@nextcloud/axios'
 import { generateOcsUrl, generateUrl } from '@nextcloud/router'
@@ -167,6 +184,7 @@ const FREE_PROMPT_TASK_TYPE_ID = 'OCP\\TextProcessing\\FreePromptTaskType'
 export default {
 	name: 'AssistantTextProcessingForm',
 	components: {
+		TaskList,
 		Text2ImageDisplay,
 		TaskTypeSelect,
 		NcButton,
@@ -176,6 +194,7 @@ export default {
 		DogIcon,
 		ContentCopyIcon,
 		ClipboardCheckOutlineIcon,
+		HistoryIcon,
 		NcNoteCard,
 		AssistantFormInputs,
 	},
@@ -205,6 +224,8 @@ export default {
 		'sync-submit',
 		'submit',
 		'action-button-clicked',
+		'try-again',
+		'load-task',
 	],
 	data() {
 		return {
@@ -214,6 +235,7 @@ export default {
 			mySelectedTaskTypeId: this.selectedTaskTypeId || FREE_PROMPT_TASK_TYPE_ID,
 			copied: false,
 			dogUrl: this.getDogUrl(),
+			showHistory: false,
 		}
 	},
 	computed: {
@@ -230,7 +252,11 @@ export default {
 			return this.selectedTaskType
 		},
 		canSubmit() {
-			// Check that none of the properties of myInputs are empty
+			if (this.selectedTaskType.id === 'speech-to-text') {
+				return (this.myInputs.sttMode === 'record' && this.myInputs.audioData !== null)
+					|| (this.myInputs.sttMode === 'choose' && this.myInputs.audioFilePath !== null)
+			}
+			// otherwise, check that none of the properties of myInputs are empty
 			return Object.values(this.myInputs).every(v => {
 				return (typeof v === 'string' && !!v?.trim())
 					|| (typeof v === 'boolean')
@@ -267,6 +293,9 @@ export default {
 				return window.location.protocol + '//' + window.location.host + generateUrl('/apps/assistant/i/{imageGenId}', { imageGenId: this.myOutput })
 			}
 			return this.myOutput.trim()
+		},
+		actionButtonsToShow() {
+			return this.hasOutput ? this.actionButtons : []
 		},
 	},
 	watch: {
@@ -417,10 +446,11 @@ export default {
 	.footer {
 		width: 100%;
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: end;
-		gap: 4px;
-		.action-buttons {
+		.history-button {
+			height: 44px;
+		}
+		&--action-buttons {
+			flex-grow: 1;
 			display: flex;
 			flex-wrap: wrap;
 			justify-content: end;
@@ -461,6 +491,17 @@ export default {
 		color: gray;
 		margin: 0;
 		padding-top: 0;
+	}
+
+	.history {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: end;
+
+		&--list {
+			width: 100%;
+		}
 	}
 
 	.success-icon {
