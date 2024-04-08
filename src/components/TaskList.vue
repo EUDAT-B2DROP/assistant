@@ -1,7 +1,5 @@
 <template>
-	<NcLoadingIcon v-if="loading"
-		:size="64" />
-	<ul v-else
+	<ul
 		class="task-list">
 		<TaskListItem v-for="task in tasks"
 			:key="task.id"
@@ -15,12 +13,10 @@
 </template>
 
 <script>
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-
 import TaskListItem from './TaskListItem.vue'
 
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
+import { generateOcsUrl } from '@nextcloud/router'
 
 import { STATUS } from '../constants.js'
 
@@ -29,13 +25,16 @@ export default {
 
 	components: {
 		TaskListItem,
-		NcLoadingIcon,
 	},
 
 	props: {
 		taskType: {
 			type: [String, null],
 			default: null,
+		},
+		loading: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -46,7 +45,6 @@ export default {
 
 	data() {
 		return {
-			loading: false,
 			tasks: [],
 		}
 	},
@@ -66,23 +64,23 @@ export default {
 
 	methods: {
 		getTasks() {
-			this.loading = true
+			this.$emit('update:loading', true)
 			const req = {
 				params: {
 					taskType: this.taskType,
 				},
 			}
-			const url = generateUrl('/apps/assistant/tasks')
+			const url = generateOcsUrl('/apps/assistant/api/v1/tasks')
 			axios.get(url, req).then(response => {
-				this.tasks = response.data.tasks
+				this.tasks = response.data?.ocs?.data?.tasks
 			}).catch(error => {
 				console.error(error)
 			}).then(() => {
-				this.loading = false
+				this.$emit('update:loading', false)
 			})
 		},
 		onTaskDelete(task) {
-			const url = generateUrl('/apps/assistant/task/{id}', { id: task.id })
+			const url = generateOcsUrl('/apps/assistant/api/v1/task/{id}', { id: task.id })
 			axios.delete(url).then(response => {
 				const index = this.tasks.findIndex(t => { return t.id === task.id })
 				if (index !== -1) {
@@ -93,7 +91,7 @@ export default {
 			})
 		},
 		onTaskCancel(task) {
-			const url = generateUrl('/apps/assistant/task/cancel/{id}', { id: task.id })
+			const url = generateOcsUrl('/apps/assistant/api/v1/task/cancel/{id}', { id: task.id })
 			axios.put(url).then(response => {
 				task.status = STATUS.failed
 				task.output = t('assistant', 'Canceled by user')
@@ -107,14 +105,7 @@ export default {
 
 <style lang="scss">
 .task-list {
-	//display: flex;
-	//flex-direction: column;
-	//align-items: center;
-	//row-gap: 8px;
-	//column-gap: 6px;
-
 	&--item {
-		//margin: 0 12px 0 12px;
 		width: 99% !important;
 	}
 }

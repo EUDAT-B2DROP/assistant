@@ -20,20 +20,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace OCA\TpAssistant\Service\SpeechToText;
+namespace OCA\Assistant\Service\SpeechToText;
 
 use DateTime;
+use Exception;
 use InvalidArgumentException;
-use OCA\TpAssistant\AppInfo\Application;
-use OCA\TpAssistant\Db\MetaTaskMapper;
+use OC\User\NoUserException;
+use OCA\Assistant\AppInfo\Application;
+use OCA\Assistant\Db\MetaTask;
+use OCA\Assistant\Db\MetaTaskMapper;
+use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\AppFramework\Db\MultipleObjectsReturnedException;
+use OCP\AppFramework\Http;
 use OCP\Files\File;
 use OCP\Files\Folder;
+use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\Files\NotPermittedException;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\PreConditionNotMetException;
 use OCP\SpeechToText\ISpeechToTextManager;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class SpeechToTextService {
@@ -43,19 +52,56 @@ class SpeechToTextService {
 		private IRootFolder $rootFolder,
 		private IConfig $config,
 		private MetaTaskMapper $metaTaskMapper,
+		private IL10N $l10n,
+		private LoggerInterface $logger,
 	) {
+	}
+
+	/**
+	 * Internal function to get transcription assistant tasks based on the assistant meta task id
+	 *
+	 * @param string $userId
+	 * @param integer $metaTaskId
+	 * @return MetaTask
+	 * @throws Exception
+	 */
+	public function internalGetTask(string $userId, int $metaTaskId): MetaTask {
+		try {
+			$metaTask = $this->metaTaskMapper->getUserMetaTask($metaTaskId, $userId);
+
+			if($metaTask->getCategory() !== Application::TASK_CATEGORY_SPEECH_TO_TEXT) {
+				throw new Exception('Task is not a speech to text task.', Http::STATUS_BAD_REQUEST);
+			}
+
+			return $metaTask;
+		} catch (MultipleObjectsReturnedException $e) {
+			$this->logger->error('Multiple tasks found for one id: ' . $e->getMessage(), ['app' => Application::APP_ID]);
+			throw new Exception($this->l10n->t('Multiple tasks found'), Http::STATUS_BAD_REQUEST);
+		} catch (DoesNotExistException $e) {
+			throw new Exception($this->l10n->t('Transcript not found'), Http::STATUS_NOT_FOUND);
+		} catch (Exception $e) {
+			$this->logger->error('Error: ' . $e->getMessage(), ['app' => Application::APP_ID]);
+			throw new Exception(
+				$this->l10n->t('Some internal error occurred. Contact your sysadmin for more info.'),
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 	}
 
 	/**
 	 * @param string $path
 	 * @param string|null $userId
+	 * @param string $appId
+	 * @param string $identifier
+	 * @return MetaTask
+	 * @throws InvalidPathException
+	 * @throws NoUserException
 	 * @throws NotFoundException
 	 * @throws NotPermittedException
 	 * @throws PreConditionNotMetException
-	 * @throws InvalidArgumentException
-	 * @throws RuntimeException
+	 * @throws \OCP\DB\Exception
 	 */
-	public function transcribeFile(string $path, ?string $userId): void {
+	public function transcribeFile(string $path, ?string $userId, string $appId, string $identifier): MetaTask {
 		// this also prevents NoUserException
 		if (is_null($userId)) {
 			throw new InvalidArgumentException('userId must not be null');
@@ -69,27 +115,33 @@ class SpeechToTextService {
 
 		$this->speechToTextManager->scheduleFileTranscription($audioFile, $userId, Application::APP_ID);
 
-		$this->metaTaskMapper->createMetaTask(
+		return $this->metaTaskMapper->createMetaTask(
 			$userId,
 			['fileId' => $audioFile->getId(), 'eTag' => $audioFile->getEtag()],
 			'',
 			time(),
 			$audioFile->getId(),
 			'speech-to-text',
-			Application::APP_ID,
+			$appId,
 			Application::STATUS_META_TASK_SCHEDULED,
-			Application::TASK_CATEGORY_SPEECH_TO_TEXT);
+			Application::TASK_CATEGORY_SPEECH_TO_TEXT,
+			$identifier
+		);
 	}
 
 	/**
 	 * @param string $tempFileLocation
 	 * @param string|null $userId
+	 * @param string $appId
+	 * @param string $identifier
+	 * @return MetaTask
+	 * @throws InvalidPathException
+	 * @throws NotFoundException
 	 * @throws NotPermittedException
 	 * @throws PreConditionNotMetException
-	 * @throws InvalidArgumentException
-	 * @throws RuntimeException
+	 * @throws \OCP\DB\Exception
 	 */
-	public function transcribeAudio(string $tempFileLocation, ?string $userId): void {
+	public function transcribeAudio(string $tempFileLocation, ?string $userId, string $appId, string $identifier): MetaTask {
 		if ($userId === null) {
 			throw new InvalidArgumentException('userId must not be null');
 		}
@@ -98,16 +150,18 @@ class SpeechToTextService {
 
 		$this->speechToTextManager->scheduleFileTranscription($audioFile, $userId, Application::APP_ID);
 
-		$this->metaTaskMapper->createMetaTask(
+		return $this->metaTaskMapper->createMetaTask(
 			$userId,
 			['fileId' => $audioFile->getId(), 'eTag' => $audioFile->getEtag()],
 			'',
 			time(),
 			$audioFile->getId(),
 			'speech-to-text',
-			Application::APP_ID,
+			$appId,
 			Application::STATUS_META_TASK_SCHEDULED,
-			Application::TASK_CATEGORY_SPEECH_TO_TEXT);
+			Application::TASK_CATEGORY_SPEECH_TO_TEXT,
+			$identifier
+		);
 	}
 
 	/**
@@ -132,7 +186,14 @@ class SpeechToTextService {
 			}
 			$this->config->setAppValue(Application::APP_ID, 'stt_folder', $sttFolderName);
 		} else {
-			$sttFolder = $userFolder->get($sttFolderName);
+			try {
+				$sttFolder = $userFolder->get($sttFolderName);
+			} catch (NotFoundException $e) {
+				// it was deleted
+				$sttFolder = $this->getUniqueNamedFolder($userId);
+				$sttFolderName = $sttFolder->getName();
+				$this->config->setAppValue(Application::APP_ID, 'stt_folder', $sttFolderName);
+			}
 			if (!$sttFolder instanceof Folder) {
 				// the folder created by this app was tampered with
 				// create a new one

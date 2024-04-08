@@ -4,6 +4,8 @@ OC.L10N.register(
     "Nextcloud Assistant" : "Asystent Nextcloud",
     "View results" : "Pokaż wyniki",
     "Artificial Intelligence" : "Sztuczna inteligencja",
+    "Choose file" : "Wybierz plik",
+    "Choose" : "Wybierz",
     "No file selected" : "Nie wybrano żadnego pliku",
     "Close" : "Zamknij",
     "Reset" : "Resetuj",

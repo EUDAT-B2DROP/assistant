@@ -1,11 +1,14 @@
 OC.L10N.register(
     "assistant",
     {
+    "Choose" : "Elige",
     "No file selected" : "No se ha seleccionado algún archivo",
     "Close" : "Cerrar",
     "Reset" : "Restablecer",
     "Result" : "Resultado",
     "Try again" : "Inténtalo de nuevo",
+    "Delete" : "Eliminar",
+    "Unknown error" : "Error desconocido",
     "Submit" : "Enviar",
     "Preview" : "Vista previa",
     "Send" : "Enviar",

@@ -116,20 +116,15 @@ export default {
 			this.showSyncTaskRunning = true
 			this.task.inputs = inputs
 			this.task.taskType = taskTypeId
-			if (taskTypeId === 'speech-to-text') {
-				runSttTask(inputs).then(response => {
-					this.showScheduleConfirmation = true
-					this.showSyncTaskRunning = false
-				})
-				return
-			}
-			const runOrScheduleFunction = taskTypeId === 'OCP\\TextToImage\\Task'
-				? runOrScheduleTtiTask
-				: runOrScheduleTask
+			const runOrScheduleFunction = taskTypeId === 'speech-to-text'
+				? runSttTask
+				: taskTypeId === 'OCP\\TextToImage\\Task'
+					? runOrScheduleTtiTask
+					: runOrScheduleTask
 			runOrScheduleFunction(this.task.appId, this.task.identifier, taskTypeId, inputs)
 				.then((response) => {
-					console.debug('Assistant SYNC result', response.data)
-					const task = response.data?.task
+					console.debug('Assistant SYNC result', response.data?.ocs?.data)
+					const task = response.data?.ocs?.data?.task
 					this.task.inputs = task.inputs
 					if (task.status === STATUS.successfull) {
 						this.task.output = task?.output ?? ''
@@ -169,7 +164,7 @@ export default {
 	justify-content: center;
 	margin: 24px 16px 16px 16px;
 	.form {
-		width: 600px;
+		max-width: 900px;
 	}
 }
 </style>

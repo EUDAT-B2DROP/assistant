@@ -1,6 +1,7 @@
 OC.L10N.register(
     "assistant",
     {
+    "Choose" : "בחר",
     "No file selected" : "לא נבחר קובץ",
     "Close" : "סגירה",
     "Reset" : "איפוס",
@@ -9,6 +10,8 @@ OC.L10N.register(
     "Try again" : "ניסיון חוזר",
     "Cancel" : "ביטול",
     "Delete" : "מחיקה",
+    "Unknown error" : "שגיאה בלתי ידועה",
+    "Running" : "ריצה",
     "Submit" : "שליחה",
     "Preview" : "תצוגה מקדימה",
     "Send" : "שליחה",
