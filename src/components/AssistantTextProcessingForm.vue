@@ -30,8 +30,9 @@
 					{{ t('assistant', 'Previous "{taskTypeName}" tasks', { taskTypeName: selectedTaskType.name }) }}
 				</h2>
 			</div>
-			<TaskList class="history--list"
-				:task-type="mySelectedTaskTypeId"
+			<TaskList
+				class="history--list"
+				:task-type="selectedTaskType"
 				:loading.sync="historyLoading"
 				@try-again="onHistoryTryAgain"
 				@load-task="onHistoryLoadTask" />
