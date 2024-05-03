@@ -2,8 +2,7 @@
 
 namespace OCA\Assistant\Service;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
-
+use Html2Text\Html2Text;
 use OC\SpeechToText\TranscriptionJob;
 use OCA\Assistant\AppInfo\Application;
 use OCA\Assistant\Db\MetaTask;
@@ -20,6 +19,7 @@ use OCP\Files\GenericFileException;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 use OCP\IL10N;
+use OCP\ITempManager;
 use OCP\Lock\LockedException;
 use OCP\PreConditionNotMetException;
 use OCP\SpeechToText\ISpeechToTextManager;
@@ -34,6 +34,8 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
+use RtfHtmlPhp\Document;
+use RtfHtmlPhp\Html\HtmlFormatter;
 use RuntimeException;
 
 /**
@@ -51,6 +53,7 @@ class AssistantService {
 		private IJobList $jobList,
 		private IL10N $l10n,
 		private ContainerInterface $container,
+		private ITempManager $tempManager,
 	) {
 	}
 
@@ -401,7 +404,7 @@ class AssistantService {
 
 		try {
 			if ($file instanceof File) {
-				$contents = $file->getContent();
+				$fileContent = $file->getContent();
 			} else {
 				throw new \Exception('Provided path does not point to a file.');
 			}
@@ -415,36 +418,31 @@ class AssistantService {
 			default:
 			case 'text/plain':
 				{
-					$text = $contents;
+					$text = $fileContent;
 
 					break;
 				}
 			case 'text/markdown':
 				{
 					$parser = new Parsedown();
-					$text = $parser->text($contents);
+					$text = $parser->text($fileContent);
 					// Remove HTML tags:
 					$text = strip_tags($text);
 					break;
 				}
+			case 'text/rtf':
+				{
+					$text = $this->parseRtfDocument($fileContent);
+					break;
+				}
 			case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
 			case 'application/msword':
-			case 'application/rtf':
 			case 'application/vnd.oasis.opendocument.text':
 				{
-					// Store the file in a temp dir and provide a path for the doc parser to use
-					$tempFilePath = sys_get_temp_dir() . '/assistant_app/' . uniqid() . '.tmp';
-					// Make sure the temp dir exists
-					if (!file_exists(dirname($tempFilePath))) {
-						mkdir(dirname($tempFilePath), 0600, true);
-					}
-					file_put_contents($tempFilePath, $contents);
-
+					$tempFilePath = $this->tempManager->getTemporaryFile();
+					file_put_contents($tempFilePath, $fileContent);
 					$text = $this->parseDocument($tempFilePath, $mimeType);
-
-					// Remove the hardlink to the file (delete it):
-					unlink($tempFilePath);
-
+					$this->tempManager->clean();
 					break;
 				}
 		}
@@ -470,11 +468,14 @@ class AssistantService {
 					$readerType = 'MsDoc';
 					break;
 				}
-			case 'application/rtf':
-				{
-					$readerType = 'RTF';
-					break;
-				}
+				// RTF parsing is buggy in phpoffice
+				/*
+				case 'text/rtf':
+					{
+						$readerType = 'RTF';
+						break;
+					}
+				*/
 			case 'application/vnd.oasis.opendocument.text':
 				{
 					$readerType = 'ODText';
@@ -494,7 +495,6 @@ class AssistantService {
 		foreach ($sections as $section) {
 			$elements = $section->getElements();
 			foreach ($elements as $element) {
-				$class = get_class($element);
 				if (method_exists($element, 'getText')) {
 					$outText .= $element->getText() . "\n";
 				}
@@ -502,5 +502,16 @@ class AssistantService {
 		}
 
 		return $outText;
+	}
+
+	private function parseRtfDocument(string $content): string {
+		// henck/rtf-to-html
+		$document = new Document($content);
+		$formatter = new HtmlFormatter('UTF-8');
+		$htmlText = $formatter->Format($document);
+
+		// html2text/html2text
+		$html = new Html2Text($htmlText);
+		return $html->getText();
 	}
 }
