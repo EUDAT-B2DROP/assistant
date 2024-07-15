@@ -1,14 +1,17 @@
 OC.L10N.register(
     "assistant",
     {
+    "User not found" : "Lietotājs nav atrasts",
     "Choose" : "Izvēlies",
     "No file selected" : "Netika izvēlēta neviena datne",
     "Close" : "Aizvērt",
     "Reset" : "Atiestatīt",
+    "Copy" : "Kopēt",
     "Delete" : "Dzēst",
+    "Submit" : "Iesniegt",
+    "Failed" : "Neizdevās",
     "Unknown error" : "Nezināma kļūda",
     "Running" : "Skriešana",
-    "Submit" : "Iesniegt",
     "Preview" : "Priekšskatīt",
     "Send" : "Sūtīt",
     "Advanced options" : "Papildu opcijas"

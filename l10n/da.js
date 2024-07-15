@@ -1,7 +1,9 @@
 OC.L10N.register(
     "assistant",
     {
+    "User not found" : "Bruger ikke fundet",
     "Artificial Intelligence" : "Kunstig Intelligens",
+    "Choose file" : "Vælg fil",
     "Type some text" : "Skriv noget tekst",
     "Choose" : "Vælg",
     "No file selected" : "Ingen fil valgt",
@@ -9,13 +11,14 @@ OC.L10N.register(
     "Reset" : "Nulstil",
     "Result" : "Resultat",
     "Copy" : "Kopiér",
-    "Cancel" : "Annullér",
     "Delete" : "Slet",
+    "Submit" : "Tilføj",
+    "Delete message" : "Slet besked",
+    "Cancel" : "Annullér",
     "Failed" : "Mislykkede",
     "Unknown error" : "Ukendt fejl",
     "Running" : "Løber",
     "Scheduled" : "Planlagt",
-    "Submit" : "Tilføj",
     "Preview" : "Forhåndsvisning",
     "Send" : "Send",
     "Advanced options" : "Avancerede indstillinger"

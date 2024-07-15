@@ -75,7 +75,8 @@
 			<p class="blabla blabla-reminder">
 				Remember: I am a BLABLADOR! Not all I say is true or even real
 			</p>
-			<div class="footer">
+			<!-- hide the footer for chatty-llm -->
+			<div v-if="mySelectedTaskTypeId !== 'chatty-llm'" class="footer">
 				<NcButton v-if="selectedTaskType"
 					class="history-button"
 					type="secondary"
@@ -156,28 +157,28 @@
 
 <script>
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
-import ContentCopyIcon from 'vue-material-design-icons/ContentCopy.vue'
 import ClipboardCheckOutlineIcon from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import DogIcon from 'vue-material-design-icons/Dog.vue'
+import ContentCopyIcon from 'vue-material-design-icons/ContentCopy.vue'
 import HistoryIcon from 'vue-material-design-icons/History.vue'
 
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
-import NcRichContenteditable from '@nextcloud/vue/dist/Components/NcRichContenteditable.js'
-import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
 import NcIconSvgWrapper from '@nextcloud/vue/dist/Components/NcIconSvgWrapper.js'
+import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcNoteCard from '@nextcloud/vue/dist/Components/NcNoteCard.js'
+import NcRichContenteditable from '@nextcloud/vue/dist/Components/NcRichContenteditable.js'
 
-import TaskTypeSelect from './TaskTypeSelect.vue'
 import AssistantFormInputs from './AssistantFormInputs.vue'
-import Text2ImageDisplay from './Text2Image/Text2ImageDisplay.vue'
-import TaskList from './TaskList.vue'
 import NoProviderEmptyContent from './NoProviderEmptyContent.vue'
+import TaskList from './TaskList.vue'
+import TaskTypeSelect from './TaskTypeSelect.vue'
+import Text2ImageDisplay from './Text2Image/Text2ImageDisplay.vue'
 
 import axios from '@nextcloud/axios'
-import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import { showError } from '@nextcloud/dialogs'
-import VueClipboard from 'vue-clipboard2'
+import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import Vue from 'vue'
+import VueClipboard from 'vue-clipboard2'
 
 Vue.use(VueClipboard)
 
@@ -365,7 +366,7 @@ export default {
 
 <style lang="scss" scoped>
 .assistant-form {
-	width: 100%;
+	//width: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -375,7 +376,10 @@ export default {
 	overflow-x: hidden;
 
 	.task-input-output-form {
+		display: flex;
+		flex-direction: column;
 		width: 100%;
+		overflow: auto;
 	}
 
 	.output {
