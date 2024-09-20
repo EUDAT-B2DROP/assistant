@@ -73,7 +73,7 @@ More details on how to set this up in the [admin docs](https://docs.nextcloud.co
 	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot2.jpg</screenshot>
 	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot3.jpg</screenshot>
 	<dependencies>
-		<nextcloud min-version="29" max-version="31"/>
+		<nextcloud min-version="30" max-version="31"/>
 	</dependencies>
 	<settings>
 		<admin>OCA\Assistant\Settings\Admin</admin>
