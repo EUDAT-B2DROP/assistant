@@ -6,6 +6,62 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## 2.0.4 – 2024-09-04
+
+### Fixed
+
+- Do not send the user's display name in the chat instruct prompts by default @julien-nc [#116](https://github.com/nextcloud/assistant/pull/116)
+- Only show 2 digits for the task progress @julien-nc [#119](https://github.com/nextcloud/assistant/pull/119)
+- Missing destructured param when calling openAssistantTask @julien-nc [#120](https://github.com/nextcloud/assistant/pull/120)
+- Adjust to html header structure change in 31
+
+## 2.0.3 – 2024-08-13
+
+### Changed
+
+- Show all task types inline @julien-nc [#109](https://github.com/nextcloud/assistant/pull/109)
+- More links to docs @marcelklehr [#108](https://github.com/nextcloud/assistant/pull/108)
+
+### Fixed
+
+- Populate scopeList with scopeListMeta on select event @kyteinsky [#105](https://github.com/nextcloud/assistant/pull/105)
+- More error log @marcelklehr [#107](https://github.com/nextcloud/assistant/pull/107)
+- Don't require Admin access for Chat with AI @marcelklehr [#106](https://github.com/nextcloud/assistant/pull/106)
+- Trim text values @julien-nc [#110](https://github.com/nextcloud/assistant/pull/110)
+- Avoid colon in uploaded file names @julien-nc [#111](https://github.com/nextcloud/assistant/pull/111)
+
+## 2.0.2 – 2024-07-26
+
+### Added
+
+- Support for Enum field type @julien-nc
+- Support action buttons when opening a task with OCA.Assistant.openAssistantTask @julien-nc
+
+### Changed
+
+- Hide 'choose file' button in context chat input form @julien-nc
+
+### Fixed
+
+- Fix short input displayed when a task is scheduled @julien-nc
+- Fix style issues in standalone page @julien-nc
+
+## 2.0.1 – 2024-07-22
+
+### Added
+
+- Ability to cancel a task while waiting for results in the assistant @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+
+### Changed
+
+- Set min and max NC version to 30
+- Switch from text processing to task processing API @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+- UI/UX improvements @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+- Avoid blocking a Php runner waiting for ChattyUI tasks to finish, poll in the frontend like the other task types @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+- Get rid of the smart picker custom components, open the assistant instead @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+- Simplify image generation, let users download or share result images directly in the assistant @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+- Simplify the audio recorder and make it look more like the one in Talk @julien-nc [#97](https://github.com/nextcloud/assistant/pull/97)
+
 ## 1.1.0 – 2024-06-19
 
 ### Added

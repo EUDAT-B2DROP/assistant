@@ -4,6 +4,7 @@
 			<AssistantIcon class="icon" />
 			{{ t('assistant', 'Nextcloud Assistant') }}
 		</h2>
+		<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/index.html">{{ t('assistant', 'Find more details on how to set up Assistant and recommended backends in the Administration documentation.') }}</a></p>
 		<div id="assistant-content">
 			<div>
 				<h3>
@@ -31,8 +32,12 @@
 						<div v-if="!state.free_prompt_task_type_available" class="checkbox-text">
 							<InformationOutlineIcon class="icon" />
 							<span>
-								{{ t('assistant', 'To enable this feature, please install an AI text processing provider for the free prompt task type.') }}
+								{{ t('assistant', 'To enable this feature, please install an AI text processing provider for the free prompt task type:') }}
 							</span>
+							<ul>
+								<li><a href="https://github.com/nextcloud/llm2#readme">Local Large language model app</a></li>
+								<li><a href="https://apps.nextcloud.com/apps/integration_openai">OpenAI/LocalAI Integration</a></li>
+							</ul>
 						</div>
 					</div>
 				</NcCheckboxRadioSwitch>
@@ -45,8 +50,12 @@
 						<div v-if="!state.text_to_image_picker_available" class="checkbox-text">
 							<InformationOutlineIcon class="icon" />
 							<span>
-								{{ t('assistant', 'To enable this feature, please install a text-to-image provider.') }}
+								{{ t('assistant', 'To enable this feature, please install a text-to-image provider:') }}
 							</span>
+							<ul>
+								<li><a href="https://github.com/nextcloud/text2image_stablediffusion#readme">Local Text-To-Image StableDiffusion</a></li>
+								<li><a href="https://apps.nextcloud.com/apps/integration_openai">OpenAI/LocalAI Integration</a></li>
+							</ul>
 						</div>
 					</div>
 				</NcCheckboxRadioSwitch>
@@ -59,28 +68,15 @@
 						<div v-if="!state.speech_to_text_picker_available" class="checkbox-text">
 							<InformationOutlineIcon class="icon" />
 							<span>
-								{{ t('assistant', 'To enable this feature, please install a speech-to-text provider.') }}
+								{{ t('assistant', 'To enable this feature, please install a speech-to-text provider:') }}
 							</span>
+							<ul>
+								<li><a href="https://github.com/nextcloud/stt_whisper2#readme">Local Speech-To-Text Whisper</a></li>
+								<li><a href="https://apps.nextcloud.com/apps/integration_openai">OpenAI/LocalAI Integration</a></li>
+							</ul>
 						</div>
 					</div>
 				</NcCheckboxRadioSwitch>
-			</div>
-			<div>
-				<h2>
-					{{ t('assistant', 'Image storage') }}
-				</h2>
-				<div class="line">
-					<label for="max_gen_idle_time">
-						<CalendarClockIcon class="icon" />
-						{{ t('assistant', 'Image generation idle time (days)') }}
-					</label>
-					<NcTextField id="max_image_gen_idle_time"
-						class="text-field"
-						:value.sync="imageGenerationIdleDays"
-						:error="!isUnsignedIntStr(state.max_image_generation_idle_time)"
-						:title="t('assistant', 'Days until generated images are deleted if they are not viewed')"
-						@update:value="onUnsignedIntFieldChanged(state.max_image_generation_idle_time, 'max_image_generation_idle_time')" />
-				</div>
 			</div>
 			<div class="chat-with-ai">
 				<h2>
@@ -145,7 +141,6 @@
 </template>
 
 <script>
-import CalendarClockIcon from 'vue-material-design-icons/CalendarClock.vue'
 import InformationOutlineIcon from 'vue-material-design-icons/InformationOutline.vue'
 import AssistantIcon from './icons/AssistantIcon.vue'
 
@@ -170,7 +165,6 @@ export default {
 		NcNoteCard,
 		NcRichContenteditable,
 		NcTextField,
-		CalendarClockIcon,
 		InformationOutlineIcon,
 	},
 
@@ -184,21 +178,6 @@ export default {
 	},
 
 	computed: {
-		imageGenerationIdleDays: {
-			get() {
-				if (this.isUnsignedIntStr(this.state.max_image_generation_idle_time)) {
-					return (parseInt(this.state.max_image_generation_idle_time) / 60 / 60 / 24).toString()
-				}
-				return this.state.max_image_generation_idle_time
-			},
-			set(newValue) {
-				if (this.isUnsignedIntStr(newValue)) {
-					this.state.max_image_generation_idle_time = parseInt(newValue) * 60 * 60 * 24
-				} else {
-					this.state.max_image_generation_idle_time = newValue
-				}
-			},
-		},
 	},
 
 	methods: {
@@ -208,11 +187,6 @@ export default {
 		onCheckboxChanged(newValue, key) {
 			this.state[key] = newValue
 			this.saveOptions({ [key]: this.state[key] ? '1' : '0' })
-		},
-		onUnsignedIntFieldChanged(newValue, key) {
-			if (this.isUnsignedIntStr(newValue)) {
-				this.delayedValueUpdate(newValue, key)
-			}
 		},
 		delayedValueUpdate(newValue, key) {
 			delay(() => {
