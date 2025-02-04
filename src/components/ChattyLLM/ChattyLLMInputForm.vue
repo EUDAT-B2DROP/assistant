@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="container">
 		<NcAppNavigation>
@@ -11,7 +15,7 @@
 				</NcAppNavigationNew>
 				<div v-if="sessions == null" class="unloaded-sessions">
 					<NcLoadingIcon :size="30" />
-					{{ t('assistant', 'Loading conversations...') }}
+					{{ t('assistant', 'Loading conversations…') }}
 				</div>
 				<div v-else-if="sessions != null && sessions.length === 0" class="unloaded-sessions">
 					{{ t('assistant', 'No conversations yet') }}
@@ -28,7 +32,7 @@
 					:inline-actions="1"
 					@click="onSessionSelect(session)">
 					<template #actions>
-						<NcActionButton @click="deleteSession(session.id)">
+						<NcActionButton @click="sessionIdToDelete = session.id">
 							<template #icon>
 								<DeleteIcon v-if="!loading.sessionDelete" :size="20" />
 								<NcLoadingIcon v-else :size="20" />
@@ -115,12 +119,37 @@
 					</div>
 				</div>
 			</div>
+			<AgencyConfirmation v-if="active?.sessionAgencyPendingActions && active?.agencyAnswered === false"
+				:actions="active?.sessionAgencyPendingActions"
+				class="session-area__agency-confirmation"
+				@confirm="onAgencyAnswer(true)"
+				@reject="onAgencyAnswer(false)" />
 			<InputArea ref="inputComponent"
 				class="session-area__input-area"
 				:chat-content.sync="chatContent"
 				:loading="loading"
 				@submit="handleSubmit" />
 		</NcAppContent>
+		<NcDialog :open="sessionIdToDelete !== null"
+			:name="t('assistant', 'Conversation deletion')"
+			:message="deletionConfirmationMessage"
+			:container="null"
+			@closing="sessionIdToDelete = null">
+			<template #actions>
+				<NcButton
+					@click="sessionIdToDelete = null">
+					{{ t('assistant', 'Cancel') }}
+				</NcButton>
+				<NcButton
+					type="warning"
+					@click="deleteSession(sessionIdToDelete)">
+					<template #icon>
+						<DeleteIcon />
+					</template>
+					{{ t('assistant', 'Delete') }}
+				</NcButton>
+			</template>
+		</NcDialog>
 	</div>
 </template>
 
@@ -141,11 +170,13 @@ import NcAppNavigationList from '@nextcloud/vue/dist/Components/NcAppNavigationL
 import NcAppNavigationNew from '@nextcloud/vue/dist/Components/NcAppNavigationNew.js'
 import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
 
 import ConversationBox from './ConversationBox.vue'
 import EditableTextField from './EditableTextField.vue'
 import InputArea from './InputArea.vue'
 import NoSession from './NoSession.vue'
+import AgencyConfirmation from './AgencyConfirmation.vue'
 
 import axios from '@nextcloud/axios'
 import { showError } from '@nextcloud/dialogs'
@@ -164,6 +195,7 @@ export default {
 	name: 'ChattyLLMInputForm',
 
 	components: {
+		AgencyConfirmation,
 		AutoFixIcon,
 		DeleteIcon,
 		PencilIcon,
@@ -180,6 +212,7 @@ export default {
 		NcAppNavigationNew,
 		NcButton,
 		NcLoadingIcon,
+		NcDialog,
 
 		ConversationBox,
 		EditableTextField,
@@ -191,6 +224,7 @@ export default {
 		return {
 			// { id: number, title: string, user_id: string, timestamp: number }
 			active: null,
+			sessionIdToDelete: null,
 			chatContent: '',
 			sessions: null,
 			// [{ id: number, session_id: number, role: string, content: string, timestamp: number }]
@@ -217,6 +251,17 @@ export default {
 		}
 	},
 
+	computed: {
+		deletionConfirmationMessage() {
+			if (this.sessions === null || this.sessionIdToDelete === null) {
+				return ''
+			}
+			const session = this.sessions.find(s => s.id === this.sessionIdToDelete)
+			const sessionTitle = this.getSessionTitle(session)?.trim()
+			return t('assistant', 'Are you sure you want to delete "{sessionTitle}"?', { sessionTitle })
+		},
+	},
+
 	watch: {
 		async active() {
 			this.allMessagesLoaded = false
@@ -226,13 +271,65 @@ export default {
 			this.editingTitle = false
 			this.$refs.inputComponent.focus()
 
-			if (this.active != null && !this.loading.newSession) {
+			if (this.active !== null && !this.loading.newSession) {
+				this.loading.llmGeneration = true
+				this.loading.titleGeneration = true
 				await this.fetchMessages()
 				this.scrollToBottom()
 			} else {
 				// when no active session or creating a new session
+				this.loading.llmGeneration = false
+				this.loading.titleGeneration = false
 				this.allMessagesLoaded = true
 				this.loading.newSession = false
+				return
+			}
+			// start polling in case a message is currently being generated
+			try {
+				const sessionId = this.active.id
+				const checkSessionResponse = await axios.get(getChatURL('/check_session'), { params: { sessionId } })
+				if (checkSessionResponse.data?.sessionTitle && checkSessionResponse.data?.sessionTitle !== this.active.title) {
+					this.active.title = checkSessionResponse.data?.sessionTitle
+					console.debug('update session title with check result')
+				}
+				console.debug('check session response:', checkSessionResponse.data)
+				// update the pending actions when switching conversations
+				this.active.sessionAgencyPendingActions = checkSessionResponse.data?.sessionAgencyPendingActions
+				this.active.agencyAnswered = false
+				if (checkSessionResponse.data.messageTaskId !== null) {
+					try {
+						const message = await this.pollGenerationTask(checkSessionResponse.data.messageTaskId, sessionId)
+						console.debug('checkTaskPolling result:', message)
+						this.messages.push(message)
+						this.scrollToBottom()
+					} catch (error) {
+						console.error('checkGenerationTask error:', error)
+						showError(t('assistant', 'Error generating a response'))
+					}
+				}
+				if (checkSessionResponse.data.titleTaskId !== null) {
+					try {
+						const titleResponse = await this.pollTitleGenerationTask(checkSessionResponse.data.titleTaskId, sessionId)
+						console.debug('checkTaskPolling result:', titleResponse)
+						if (titleResponse?.data?.result == null) {
+							throw new Error('No title generated, response:', titleResponse)
+						}
+
+						const session = this.sessions.find(s => s.id === sessionId)
+						if (session) {
+							session.title = titleResponse?.data?.result
+						}
+					} catch (error) {
+						console.error('onCheckSessionTitle error:', error)
+						showError(error?.response?.data?.error ?? t('assistant', 'Error getting the generated title for the conversation'))
+					}
+				}
+			} catch (error) {
+				console.error('check session error:', error)
+				showError(t('assistant', 'Error checking if the session is thinking'))
+			} finally {
+				this.loading.llmGeneration = false
+				this.loading.titleGeneration = false
 			}
 		},
 	},
@@ -321,14 +418,20 @@ export default {
 			const content = this.chatContent.trim()
 			const timestamp = +new Date() / 1000 | 0
 
-			if (this.active == null) {
+			if (this.active === null) {
 				await this.newSession()
+			}
+
+			// sending a message if there are pending actions means the user rejected the actions
+			// so we can consider the agency confirmation answered
+			if (this.active.sessionAgencyPendingActions) {
+				this.active.agencyAnswered = true
 			}
 
 			this.messages.push({ role, content, timestamp })
 			this.chatContent = ''
 			this.scrollToBottom()
-			await this.newMessage(role, content, timestamp)
+			await this.newMessage(role, content, timestamp, this.active.id)
 		},
 
 		onLoadOlderMessages() {
@@ -342,18 +445,17 @@ export default {
 		async onGenerateSessionTitle() {
 			try {
 				this.loading.titleGeneration = true
-				const response = await axios.get(getChatURL('/generate_title'), { params: { sessionId: this.active.id } })
-				const titleResponse = await this.pollTitleGenerationTask(response.data.taskId)
+				const sessionId = this.active.id
+				const response = await axios.get(getChatURL('/generate_title'), { params: { sessionId } })
+				const titleResponse = await this.pollTitleGenerationTask(response.data.taskId, sessionId)
 				console.debug('checkTaskPolling result:', titleResponse)
 				if (titleResponse?.data?.result == null) {
 					throw new Error('No title generated, response:', response)
 				}
 
-				for (const session of this.sessions) {
-					if (session.id === this.active.id) {
-						session.title = titleResponse?.data?.result
-						break
-					}
+				const session = this.sessions.find(s => s.id === sessionId)
+				if (session) {
+					session.title = titleResponse?.data?.result
 				}
 			} catch (error) {
 				console.error('onGenerateSessionTitle error:', error)
@@ -378,6 +480,7 @@ export default {
 				showError(error?.response?.data?.error ?? t('assistant', 'Error deleting conversation'))
 			} finally {
 				this.loading.sessionDelete = false
+				this.sessionIdToDelete = null
 			}
 		},
 
@@ -466,13 +569,13 @@ export default {
 			}
 		},
 
-		async newMessage(role, content, timestamp) {
+		async newMessage(role, content, timestamp, sessionId, replaceLastMessage = true, agencyConfirm = null) {
 			try {
 				this.loading.newHumanMessage = true
 				const firstHumanMessage = this.messages.length === 1 && this.messages[0].role === Roles.HUMAN
 
 				const response = await axios.put(getChatURL('/new_message'), {
-					sessionId: this.active.id,
+					sessionId,
 					role,
 					content,
 					timestamp,
@@ -481,15 +584,17 @@ export default {
 				console.debug('newMessage response:', response)
 				this.loading.newHumanMessage = false
 
-				// replace the last message with the response that contains the id
-				this.messages[this.messages.length - 1] = response.data
+				if (replaceLastMessage) {
+					// replace the last message with the response that contains the id
+					this.messages[this.messages.length - 1] = response.data
+				}
 
 				if (firstHumanMessage) {
-					const session = this.sessions.find((session) => session.id === this.active.id)
+					const session = this.sessions.find((session) => session.id === sessionId)
 					session.title = content
 				}
 
-				await this.runGenerationTask()
+				await this.runGenerationTask(sessionId, agencyConfirm)
 			} catch (error) {
 				this.loading.newHumanMessage = false
 				console.error('newMessage error:', error)
@@ -521,12 +626,18 @@ export default {
 			}
 		},
 
-		async runGenerationTask() {
+		async runGenerationTask(sessionId, agencyConfirm = null) {
 			try {
 				this.loading.llmGeneration = true
-				const response = await axios.get(getChatURL('/generate'), { params: { sessionId: this.active.id } })
+				const params = {
+					sessionId,
+				}
+				if (agencyConfirm !== null) {
+					params.agencyConfirm = agencyConfirm ? 1 : 0
+				}
+				const response = await axios.get(getChatURL('/generate'), { params })
 				console.debug('scheduleGenerationTask response:', response)
-				const message = await this.pollGenerationTask(response.data.taskId)
+				const message = await this.pollGenerationTask(response.data.taskId, sessionId)
 				console.debug('checkTaskPolling result:', message)
 				this.messages.push(message)
 				this.scrollToBottom()
@@ -540,10 +651,11 @@ export default {
 
 		async runRegenerationTask(messageId) {
 			try {
+				const sessionId = this.active.id
 				this.loading.llmGeneration = true
-				const response = await axios.get(getChatURL('/regenerate'), { params: { messageId, sessionId: this.active.id } })
+				const response = await axios.get(getChatURL('/regenerate'), { params: { messageId, sessionId } })
 				console.debug('scheduleRegenerationTask response:', response)
-				const message = await this.pollGenerationTask(response.data.taskId)
+				const message = await this.pollGenerationTask(response.data.taskId, sessionId)
 				console.debug('checkTaskPolling result:', message)
 				this.messages[this.messages.length - 1] = message
 				this.scrollToBottom()
@@ -555,15 +667,27 @@ export default {
 			}
 		},
 
-		async pollGenerationTask(taskId) {
+		async pollGenerationTask(taskId, sessionId) {
 			return new Promise((resolve, reject) => {
 				this.pollMessageGenerationTimerId = setInterval(() => {
+					if (sessionId !== this.active.id) {
+						console.debug('Stop polling messages for session ' + sessionId + ' because it is not selected anymore')
+						clearInterval(this.pollMessageGenerationTimerId)
+						return
+					}
 					axios.get(
 						getChatURL('/check_generation'),
-						{ params: { taskId, sessionId: this.active.id } },
+						{ params: { taskId, sessionId } },
 					).then(response => {
 						clearInterval(this.pollMessageGenerationTimerId)
-						resolve(response.data)
+						if (sessionId === this.active.id) {
+							this.active.sessionAgencyPendingActions = response.data.sessionAgencyPendingActions
+							this.active.agencyAnswered = false
+							resolve(response.data)
+						} else {
+							console.debug('Ignoring received message for session ' + sessionId + ' that is not selected anymore')
+							// should we reject here?
+						}
 					}).catch(error => {
 						// do not reject if response code is Http::STATUS_EXPECTATION_FAILED (417)
 						if (error.response?.status !== 417) {
@@ -571,22 +695,32 @@ export default {
 							clearInterval(this.pollMessageGenerationTimerId)
 							reject(new Error('Message generation task check failed'))
 						} else {
-							console.debug('checkTaskPolling, task is still scheduled or running', error)
+							console.debug('checkTaskPolling, task is still scheduled or running')
 						}
 					})
 				}, 2000)
 			})
 		},
 
-		async pollTitleGenerationTask(taskId) {
+		async pollTitleGenerationTask(taskId, sessionId) {
 			return new Promise((resolve, reject) => {
 				this.pollTitleGenerationTimerId = setInterval(() => {
+					if (sessionId !== this.active.id) {
+						console.debug('Stop polling title for session ' + sessionId + ' because it is not selected anymore')
+						clearInterval(this.pollTitleGenerationTimerId)
+						return
+					}
 					axios.get(
 						getChatURL('/check_title_generation'),
-						{ params: { taskId, sessionId: this.active.id } },
+						{ params: { taskId, sessionId } },
 					).then(response => {
+						if (sessionId === this.active.id) {
+							resolve(response)
+						} else {
+							console.debug('Ignoring received title for session ' + sessionId + ' that is not selected anymore')
+							// should we reject here?
+						}
 						clearInterval(this.pollTitleGenerationTimerId)
-						resolve(response)
 					}).catch(error => {
 						// do not reject if response code is Http::STATUS_EXPECTATION_FAILED (417)
 						if (error.response?.status !== 417) {
@@ -594,11 +728,27 @@ export default {
 							clearInterval(this.pollTitleGenerationTimerId)
 							reject(new Error('Title generation task check failed'))
 						} else {
-							console.debug('checkTaskPolling, task is still scheduled or running', error)
+							console.debug('checkTaskPolling, task is still scheduled or running')
 						}
 					})
 				}, 2000)
 			})
+		},
+		async onAgencyAnswer(confirm) {
+			this.active.agencyAnswered = true
+			// send accept/reject message
+			const role = Roles.HUMAN
+			const content = ''
+			const timestamp = +new Date() / 1000 | 0
+
+			if (this.active === null) {
+				await this.newSession()
+			}
+
+			// this.messages.push({ role, content, timestamp })
+			this.chatContent = ''
+			this.scrollToBottom()
+			await this.newMessage(role, content, timestamp, this.active.id, false, confirm)
 		},
 	},
 }
@@ -754,6 +904,10 @@ export default {
 
 		&__chat-area, &__input-area {
 			padding-left: 1em;
+		}
+
+		&__agency-confirmation {
+			margin-left: 1em;
 		}
 
 		&__input-area {

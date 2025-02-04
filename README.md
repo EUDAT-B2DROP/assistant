@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 # Blassistant, a Blablador Nextcloud Assistant fork
 [![build](https://github.com/EUDAT-B2DROP/assistant/actions/workflows/build-fork.yml/badge.svg?branch=main)](https://github.com/EUDAT-B2DROP/assistant/actions/workflows/build-fork.yml)
 [![Lint php-cs](https://github.com/EUDAT-B2DROP/assistant/actions/workflows/lint-php-cs.yml/badge.svg)](https://github.com/EUDAT-B2DROP/assistant/actions/workflows/lint-php-cs.yml)
@@ -15,6 +19,8 @@ Get in touch with us at [blablador@fz-juelich.de](mailto:blablador@fz-juelich.de
 ---
 
 # Nextcloud Assistant
+
+[![REUSE status](https://api.reuse.software/badge/github.com/nextcloud/assistant)](https://api.reuse.software/info/github.com/nextcloud/assistant)
 
 This app brings a user interface to use the Nextcloud text processing feature.
 

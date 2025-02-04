@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Event;
 
 use OCP\EventDispatcher\Event;
@@ -59,7 +64,7 @@ class BeforeAssistantNotificationEvent extends Event {
 
 	/**
 	 * @param string|null $notificationTarget URL that will be used as target for the notification and its main action,
-	 * null means the assistant will take care of rendering the result (in a modal or by setting a dedicated NC page showing the result)
+	 *                                        null means the assistant will take care of rendering the result (in a modal or by setting a dedicated NC page showing the result)
 	 * @return void
 	 */
 	public function setNotificationTarget(?string $notificationTarget): void {
@@ -75,7 +80,7 @@ class BeforeAssistantNotificationEvent extends Event {
 
 	/**
 	 * @param string|null $notificationActionLabel Label of the main notification action
-	 * null will not change the default action label
+	 *                                             null will not change the default action label
 	 * @return void
 	 */
 	public function setNotificationActionLabel(?string $notificationActionLabel): void {

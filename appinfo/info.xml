@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <info>
 	<id>assistant</id>
 	<name>Nextcloud blablador Assistant</name>
@@ -59,9 +63,9 @@ Known providers:
 
 More details on how to set this up in the [admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/index.html)
 ]]>	</description>
-	<version>2.0.4</version>
+	<version>2.4.0</version>
 	<licence>agpl</licence>
-	<author>Julien Veyssier</author>
+	<author>Julien Veyssier, Marvin Winkens</author>
 	<namespace>Assistant</namespace>
 	<documentation>
 		<developer>https://github.com/EUDAT-B2DROP/assistant</developer>
@@ -73,7 +77,7 @@ More details on how to set this up in the [admin docs](https://docs.nextcloud.co
 	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot2.jpg</screenshot>
 	<screenshot>https://github.com/EUDAT-B2DROP/assistant/raw/main/img/screenshot3.jpg</screenshot>
 	<dependencies>
-		<nextcloud min-version="30" max-version="31"/>
+		<nextcloud min-version="30" max-version="32"/>
 	</dependencies>
 	<settings>
 		<admin>OCA\Assistant\Settings\Admin</admin>

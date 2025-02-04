@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div id="assistant_prefs" class="section">
 		<h2>
@@ -39,6 +43,15 @@
 					{{ t('assistant', 'No suitable providers are available. They must first be enabled by your administrator.') }}
 				</span>
 			</div>
+			<div v-else>
+				<h3>{{ t('assistant', 'Configured Backends') }}</h3>
+				<p>{{ t('assistant', 'The following services are used as backends for Nextcloud Assistant:') }}</p>
+				<ul>
+					<li v-for="(providerName, taskName) in providers" :key="taskName">
+						{{ t('assistant', '{providerName} for {taskName}', { providerName, taskName }, null, { escape: false }) }}
+					</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 </template>
@@ -68,6 +81,7 @@ export default {
 	data() {
 		return {
 			state: loadState('assistant', 'config'),
+			providers: loadState('assistant', 'availableProviders'),
 		}
 	},
 

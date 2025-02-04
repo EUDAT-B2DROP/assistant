@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="media-list-field">
 		<div ref="copyContainer" class="label-row">
@@ -227,7 +231,14 @@ export default {
 			}
 		},
 		getDownloadUrl(fileId) {
+			// taskprocessing/tasks/{taskId}/file/{fileId} result has no mimetype
+			/*
 			return generateOcsUrl('taskprocessing/tasks/{taskId}/file/{fileId}', {
+				taskId: this.providedCurrentTaskId(),
+				fileId,
+			})
+			*/
+			return generateOcsUrl('apps/assistant/api/v1/task/{taskId}/output-file/{fileId}/download', {
 				taskId: this.providedCurrentTaskId(),
 				fileId,
 			})

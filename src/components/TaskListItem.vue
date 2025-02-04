@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<NcListItem
 		class="task-list-item"
@@ -38,6 +42,7 @@
 				{{ t('assistant', 'Try again') }}
 			</NcActionButton>
 			<NcActionButton v-if="isScheduled || isRunning"
+				:close-after-click="true"
 				@click="$emit('cancel')">
 				<template #icon>
 					<CloseIcon />

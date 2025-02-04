@@ -1,11 +1,11 @@
 { "translations": {
     "User not found" : "Utilizador não encontrado",
     "Close" : "Fechar",
+    "Cancel" : "Cancelar",
     "Delete" : "Eliminar",
     "Submit" : "Submeter",
     "You" : "Vovê",
     "Choose" : "Escolher",
-    "Cancel" : "Cancelar",
     "Cancelled" : "Cancelado",
     "Running" : "Correr",
     "No file selected" : "Nenhum ficheiro seleccionado",

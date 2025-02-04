@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="input-area">
 		<NcRichContenteditable ref="richContenteditable"
@@ -77,8 +81,8 @@ export default {
 
 	data: () => {
 		return {
-			placeholderText: t('assistant', 'Type a message...'),
-			thinkingText: t('assistant', 'Thinking...'),
+			placeholderText: t('assistant', 'Type a message…'),
+			thinkingText: t('assistant', 'Processing…'),
 			submitBtnAriaText: t('assistant', 'Submit'),
 		}
 	},

@@ -3,24 +3,8 @@
 declare(strict_types=1);
 
 /**
- * @copyright Copyright (c) 2024 Anupam Kumar <kyteinsky@gmail.com>
- *
- * @author Anupam Kumar <kyteinsky@gmail.com>
- *
- * @license GNU AGPL version 3 or any later version
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 namespace OCA\Assistant\Db\ChattyLLM;
@@ -54,6 +38,26 @@ class MessageMapper extends QBMapper {
 			->from($this->getTableName())
 			->where($qb->expr()->eq('session_id', $qb->createPositionalParameter($sessionId, IQueryBuilder::PARAM_INT)))
 			->setMaxResults($n);
+
+		return $this->findEntity($qb);
+	}
+
+	/**
+	 * @param integer $sessionId
+	 * @return Message
+	 * @throws \OCP\DB\Exception
+	 * @throws \RuntimeException
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException
+	 * @throws \OCP\AppFramework\Db\MultipleObjectsReturnedException
+	 */
+	public function getLastHumanMessage(int $sessionId): Message {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select(Message::$columns)
+			->from($this->getTableName())
+			->where($qb->expr()->eq('session_id', $qb->createPositionalParameter($sessionId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('role', $qb->createPositionalParameter('human', IQueryBuilder::PARAM_STR)))
+			->orderBy('timestamp', 'DESC')
+			->setMaxResults(1);
 
 		return $this->findEntity($qb);
 	}
@@ -93,6 +97,24 @@ class MessageMapper extends QBMapper {
 		$qb->select(Message::$columns)
 			->from($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createPositionalParameter($messageId, IQueryBuilder::PARAM_INT)));
+
+		return $this->findEntity($qb);
+	}
+
+	/**
+	 * @param int $sessionId
+	 * @param int $ocpTaskId
+	 * @return Message
+	 * @throws DoesNotExistException
+	 * @throws MultipleObjectsReturnedException
+	 * @throws \OCP\DB\Exception
+	 */
+	public function getMessageByTaskId(int $sessionId, int $ocpTaskId): Message {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select(Message::$columns)
+			->from($this->getTableName())
+			->where($qb->expr()->eq('session_id', $qb->createPositionalParameter($sessionId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('ocp_task_id', $qb->createPositionalParameter($ocpTaskId, IQueryBuilder::PARAM_INT)));
 
 		return $this->findEntity($qb);
 	}

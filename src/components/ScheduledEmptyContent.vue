@@ -1,16 +1,28 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<NcEmptyContent
 		:name="title"
 		:description="t('assistant', 'You will receive a notification when it has finished')">
-		<template v-if="showCloseButton" #action>
-			<NcButton
-				type="tertiary"
-				@click="$emit('close')">
-				<template #icon>
-					<CloseIcon />
-				</template>
-				{{ t('assistant', 'Close') }}
-			</NcButton>
+		<template #action>
+			<div class="schedule-confirmation-actions">
+				<NcButton
+					@click="$emit('back')">
+					<template #icon>
+						<ArrowLeftIcon />
+					</template>
+					{{ t('assistant', 'Back to the Assistant') }}
+				</NcButton>
+				<NcButton v-if="showCloseButton"
+					@click="$emit('close')">
+					<template #icon>
+						<CloseIcon />
+					</template>
+					{{ t('assistant', 'Close') }}
+				</NcButton>
+			</div>
 		</template>
 		<template #icon>
 			<AssistantIcon />
@@ -20,6 +32,7 @@
 
 <script>
 import CloseIcon from 'vue-material-design-icons/Close.vue'
+import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 
 import AssistantIcon from './icons/AssistantIcon.vue'
 
@@ -34,6 +47,7 @@ export default {
 		NcButton,
 		NcEmptyContent,
 		CloseIcon,
+		ArrowLeftIcon,
 	},
 
 	props: {
@@ -49,6 +63,7 @@ export default {
 
 	emits: [
 		'cancel',
+		'back',
 	],
 
 	data() {
@@ -69,5 +84,10 @@ export default {
 </script>
 
 <style lang="scss">
-// nothing yet
+.schedule-confirmation-actions {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
 </style>

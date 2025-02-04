@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 # Change Log
 All notable changes to this project will be documented in this file.
 
@@ -5,6 +9,70 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## 2.3.0 – 2025-01-22
+
+### Changed
+
+- Save default target language & set detect_language as origin default @janepie @julien-nc [#167](https://github.com/nextcloud/assistant/pull/167)
+- Hide ChatWithTools and ContextAgentInteraction task types @julien-nc [#172](https://github.com/nextcloud/assistant/pull/172)
+- Add reuse compliance @AndyScherzinger [#163](https://github.com/nextcloud/assistant/pull/163)
+
+### Fixed
+
+- Fix config value types for some bools and ints we store @julien-nc [#174](https://github.com/nextcloud/assistant/pull/174)
+
+## 2.2.0 – 2025-01-07
+
+### Added
+
+- Agency support @julien-nc [#169](https://github.com/nextcloud/assistant/pull/169)
+
+### Changed
+
+- Use Text2TextChat in the chatty UI when the Agency task type is not available @julien-nc [#169](https://github.com/nextcloud/assistant/pull/169)
+- Switch to IAppConfig @julien-nc [#147](https://github.com/nextcloud/assistant/pull/147)
+- Avoid anthropomorphism @marcelklehr [#148](https://github.com/nextcloud/assistant/pull/148)
+- Add confirmation dialog before deleting a conversation @julien-nc [#160](https://github.com/nextcloud/assistant/pull/160)
+- Allow to pass file ID or path as initial input text field value @julien-nc [#161](https://github.com/nextcloud/assistant/pull/161)
+
+### Fixed
+
+- Fix polling when switching sessions in the frontend, prevent scheduling multiple llm tasks for one session @julien-nc [#156](https://github.com/nextcloud/assistant/pull/156)
+- Fix(notifier): check if task type is there before getting its name @julien-nc [#166](https://github.com/nextcloud/assistant/pull/166)
+
+## 2.1.1 – 2024-10-09
+
+### Added
+
+- Add a personal settings section listing the configured backends @marcelklehr [#134](https://github.com/nextcloud/assistant/pull/134)
+
+### Changed
+
+- Report task ID in more failure messages @marcelklehr [#137](https://github.com/nextcloud/assistant/pull/137)
+
+### Fixed
+
+- Missing worker policy when launching assistant @smarinier [#139](https://github.com/nextcloud/assistant/pull/139)
+- Incorrect task type prop set when trying again @julien-nc [#144](https://github.com/nextcloud/assistant/pull/144)
+- Fix navigation icon color @julien-nc [#145](https://github.com/nextcloud/assistant/pull/145)
+
+## 2.1.0 – 2024-09-30
+
+### Added
+
+- Add back buttons after launching a task @julien-nc [#131](https://github.com/nextcloud/assistant/pull/131)
+- Close the task history item menu when canceling a task @julien-nc [#131](https://github.com/nextcloud/assistant/pull/131)
+- Render context chat's the referenced source items @kyteinsky [#124](https://github.com/nextcloud/assistant/pull/124)
+
+### Changed
+
+- Migrate to vite build system @julien-nc [#125](https://github.com/nextcloud/assistant/pull/125)
+- Switch audio recorder to extendable-media-recorder @julien-nc [#125](https://github.com/nextcloud/assistant/pull/125)
+
+### Fixed
+
+- Enable submit button without scope in context chat @kyteinsky [#128](https://github.com/nextcloud/assistant/pull/128)
 
 ## 2.0.4 – 2024-09-04
 

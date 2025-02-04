@@ -1,3 +1,8 @@
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 import {
 	handleNotification, addAssistantMenuEntry,
 	openAssistantForm,
@@ -26,6 +31,7 @@ function init() {
 		subscribe('notifications:action:execute', handleNotification)
 		if (loadState('assistant', 'assistant-enabled')) {
 			addAssistantMenuEntry()
+			OCA.Assistant.last_target_language = loadState('assistant', 'last-target-language')
 		}
 	}
 }

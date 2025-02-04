@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<NcContent app-name="assistant">
 		<NcAppContent>
@@ -7,18 +11,20 @@
 					:description="shortInput"
 					:progress="progress"
 					@background-notify="onBackgroundNotify"
-					@cancel="onCancel" />
+					@cancel="onCancel"
+					@back="onBackToAssistant" />
 				<ScheduledEmptyContent
 					v-else-if="showScheduleConfirmation"
 					:description="shortInput"
-					:show-close-button="false" />
+					:show-close-button="false"
+					@back="onBackToAssistant" />
 				<AssistantTextProcessingForm
 					v-else
 					class="form"
 					:selected-task-id="task.id"
 					:inputs="task.input"
 					:outputs="task.output"
-					:selected-task-type-id="task.taskType"
+					:selected-task-type-id="task.type"
 					:loading="loading"
 					@sync-submit="onSyncSubmit"
 					@try-again="onTryAgain"
@@ -95,6 +101,11 @@ export default {
 			this.showSyncTaskRunning = false
 			setNotifyReady(this.task.id)
 		},
+		onBackToAssistant() {
+			this.showSyncTaskRunning = false
+			this.showScheduleConfirmation = false
+			this.task.output = null
+		},
 		onCancel() {
 			cancelTaskPolling()
 			cancelTask(this.task.id)
@@ -104,7 +115,7 @@ export default {
 			this.showSyncTaskRunning = true
 			this.progress = null
 			this.task.input = inputs
-			this.task.taskType = taskTypeId
+			this.task.type = taskTypeId
 			scheduleTask('assistant', this.task.identifier, taskTypeId, inputs)
 				.then((response) => {
 					console.debug('Assistant SYNC result', response.data?.ocs?.data)
@@ -114,7 +125,7 @@ export default {
 						if (finishedTask.status === TASK_STATUS_STRING.successful) {
 							this.task.output = finishedTask?.output
 						} else if (finishedTask.status === TASK_STATUS_STRING.failed) {
-							showError(t('assistant', 'Your task has failed'))
+							showError(t('assistant', 'Your task with ID {id} has failed', { id: finishedTask.id }))
 							console.error('[assistant] Task failed', finishedTask)
 							this.task.output = null
 						}
@@ -161,7 +172,7 @@ export default {
 	margin: 24px 16px 16px 16px;
 	.form {
 		width: 100%;
-		max-width: 900px;
+		//max-width: 1200px;
 	}
 }
 </style>

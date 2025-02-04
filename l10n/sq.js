@@ -3,10 +3,10 @@ OC.L10N.register(
     {
     "Try again" : "Provo përsëri",
     "Close" : "Mbylleni",
+    "Cancel" : "Anuloje",
     "Delete" : "Fshi",
     "Submit" : "Dërgo",
     "Choose" : "Zgjidhni",
-    "Cancel" : "Anuloje",
     "Cancelled" : "U anulua",
     "Result" : "Rezultatet",
     "Choose a file" : "Zgjidh një Skedar",

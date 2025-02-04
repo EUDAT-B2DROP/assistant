@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Controller;
 
 use OCA\Assistant\ResponseDefinitions;
@@ -15,6 +20,7 @@ use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\OCSController;
 use OCP\DB\Exception;
+use OCP\Files\File;
 use OCP\Files\GenericFileException;
 use OCP\Files\NotPermittedException;
 use OCP\IL10N;
@@ -76,7 +82,7 @@ class AssistantApiController extends OCSController {
 	 *
 	 * Get all available task types that the assistant can handle.
 	 *
-	 * @return DataResponse<Http::STATUS_OK, array{types: array<AssistantTaskProcessingTaskType>}, array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{types: list<AssistantTaskProcessingTaskType>}, array{}>
 	 *
 	 * 200: Available task types returned
 	 */
@@ -94,7 +100,7 @@ class AssistantApiController extends OCSController {
 	 * Get a list of assistant tasks for the current user.
 	 *
 	 * @param string|null $taskTypeId Task type id. If null, tasks of all task types will be retrieved
-	 * @return DataResponse<Http::STATUS_OK, array{tasks: array<AssistantTaskProcessingTask>}, array{}>|DataResponse<Http::STATUS_NOT_FOUND, '', array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{tasks: list<AssistantTaskProcessingTask>}, array{}>|DataResponse<Http::STATUS_NOT_FOUND, '', array{}>
 	 *
 	 * 200: User tasks returned
 	 * 404: No tasks found
@@ -121,21 +127,25 @@ class AssistantApiController extends OCSController {
 	 *
 	 * Parse and extract text content of a file (if the file type is supported)
 	 *
-	 * @param string $filePath Path of the file to parse in the user's storage
+	 * @param string|null $filePath Path of the file to parse in the user's storage
+	 * @param int|null $fileId Id of the file to parse in the user's storage
 	 * @return DataResponse<Http::STATUS_OK, array{parsedText: string}, array{}>|DataResponse<Http::STATUS_BAD_REQUEST, string, array{}>
 	 *
 	 * 200: Text parsed from file successfully
 	 * 400: Parsing text from file is not possible
 	 */
 	#[NoAdminRequired]
-	public function parseTextFromFile(string $filePath): DataResponse {
+	public function parseTextFromFile(?string $filePath = null, ?int $fileId = null): DataResponse {
 		if ($this->userId === null) {
 			return new DataResponse('Unknow user', Http::STATUS_BAD_REQUEST);
 		}
+		if ($fileId === null && $filePath === null) {
+			return new DataResponse('Invalid parameters', Http::STATUS_BAD_REQUEST);
+		}
 
 		try {
-			$text = $this->assistantService->parseTextFromFile($filePath, $this->userId);
-		} catch (\Exception | \Throwable $e) {
+			$text = $this->assistantService->parseTextFromFile($this->userId, $filePath, $fileId);
+		} catch (\Exception|\Throwable $e) {
 			return new DataResponse($e->getMessage(), Http::STATUS_BAD_REQUEST);
 		}
 		return new DataResponse([
@@ -245,12 +255,14 @@ class AssistantApiController extends OCSController {
 	}
 
 	/**
-	 * Get output file preview
+	 * Get task output file preview
 	 *
 	 * Generate and get a preview of a task output file
 	 *
 	 * @param int $ocpTaskId The task ID
 	 * @param int $fileId The task output file ID
+	 * @param int|null $x Optional preview width in pixels
+	 * @param int|null $y Optional preview height in pixels
 	 * @return DataDownloadResponse<Http::STATUS_OK, string, array{}>|DataResponse<Http::STATUS_NOT_FOUND, '', array{}>|RedirectResponse<Http::STATUS_SEE_OTHER, array{}>
 	 *
 	 * 200: The file preview has been generated and is returned
@@ -259,27 +271,62 @@ class AssistantApiController extends OCSController {
 	 */
 	#[NoAdminRequired]
 	#[NoCsrfRequired]
-	public function getOutputFilePreview(int $ocpTaskId, int $fileId): RedirectResponse|DataDownloadResponse|DataResponse {
+	public function getOutputFilePreview(int $ocpTaskId, int $fileId, ?int $x = 100, ?int $y = 100): RedirectResponse|DataDownloadResponse|DataResponse {
 		try {
-			$preview = $this->assistantService->getOutputFilePreviewFile($this->userId, $ocpTaskId, $fileId);
+			$preview = $this->assistantService->getOutputFilePreviewFile($this->userId, $ocpTaskId, $fileId, $x, $y);
 			if ($preview === null) {
 				$this->logger->error('No preview for user "' . $this->userId . '"');
 				return new DataResponse('', Http::STATUS_NOT_FOUND);
 			}
 
 			if ($preview['type'] === 'file') {
-				return new DataDownloadResponse(
-					$preview['file']->getContent(),
-					'preview',
-					$preview['file']->getMimeType()
+				/** @var File $file */
+				$file = $preview['file'];
+				$response = new DataDownloadResponse(
+					$file->getContent(),
+					$ocpTaskId . '-' . $fileId . '-preview',
+					$file->getMimeType()
 				);
+				$response->cacheFor(60 * 60 * 24, false, true);
+				return $response;
 			} elseif ($preview['type'] === 'icon') {
 				return new RedirectResponse($preview['icon']);
 			}
-		} catch (Exception | Throwable $e) {
+		} catch (Exception|Throwable $e) {
 			$this->logger->error('getImage error', ['exception' => $e]);
 			return new DataResponse('', Http::STATUS_NOT_FOUND);
 		}
 		return new DataResponse('', Http::STATUS_NOT_FOUND);
+	}
+
+	/**
+	 * Get task output file
+	 *
+	 * Get a real task output file
+	 *
+	 * @param int $ocpTaskId The task ID
+	 * @param int $fileId The task output file ID
+	 * @return DataDownloadResponse<Http::STATUS_OK, string, array{}>|DataResponse<Http::STATUS_NOT_FOUND, '', array{}>
+	 *
+	 * 200: The file preview has been generated and is returned
+	 * 404: The output file is not found
+	 */
+	#[NoAdminRequired]
+	#[NoCsrfRequired]
+	public function getOutputFile(int $ocpTaskId, int $fileId): DataDownloadResponse|DataResponse {
+		try {
+			$taskOutputFile = $this->assistantService->getTaskOutputFile($this->userId, $ocpTaskId, $fileId);
+			$realMime = mime_content_type($taskOutputFile->fopen('rb'));
+			$response = new DataDownloadResponse(
+				$taskOutputFile->getContent(),
+				$ocpTaskId . '-' . $fileId,
+				$realMime ?: 'application/octet-stream',
+			);
+			$response->cacheFor(60 * 60 * 24, false, true);
+			return $response;
+		} catch (Exception|Throwable $e) {
+			$this->logger->error('getOutputFile error', ['exception' => $e]);
+			return new DataResponse('', Http::STATUS_NOT_FOUND);
+		}
 	}
 }

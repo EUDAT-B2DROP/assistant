@@ -1,8 +1,13 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<NcModal v-if="show"
 		:size="modalSize"
 		:can-close="false"
 		:name="t('assistant', 'Nextcloud Assistant')"
+		dark
 		class="assistant-modal"
 		@close="onCancel">
 		<div ref="modal_content"
@@ -22,12 +27,14 @@
 					:description="shortInput"
 					:progress="progress"
 					@background-notify="$emit('background-notify')"
-					@cancel="$emit('cancel-task')" />
+					@cancel="$emit('cancel-task')"
+					@back="onBackToAssistant" />
 				<ScheduledEmptyContent
 					v-else-if="showScheduleConfirmation"
 					:description="shortInput"
 					:show-close-button="true"
-					@close="onCancel" />
+					@close="onCancel"
+					@back="onBackToAssistant" />
 				<AssistantTextProcessingForm
 					v-else
 					class="form"
@@ -122,13 +129,14 @@ export default {
 		'action-button-clicked',
 		'try-again',
 		'load-task',
+		'back-to-assistant',
 	],
 	data() {
 		return {
 			show: true,
 			closeButtonTitle: t('assistant', 'Close'),
 			closeButtonLabel: t('assistant', 'Close Blablador'),
-			modalSize: 'large',
+			modalSize: 'full',
 		}
 	},
 	computed: {
@@ -151,6 +159,9 @@ export default {
 		}
 	},
 	methods: {
+		onBackToAssistant() {
+			this.$emit('back-to-assistant')
+		},
 		onCancel() {
 			this.show = false
 			this.$emit('cancel')

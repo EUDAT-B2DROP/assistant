@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Controller;
 
 use OCA\Assistant\AppInfo\Application;
@@ -44,7 +49,7 @@ class AssistantController extends Controller {
 					$this->initialStateService->provideInitialState('task', $task->jsonSerialize());
 					return new TemplateResponse(Application::APP_ID, 'assistantPage');
 				}
-			} catch (Exception | \Throwable $e) {
+			} catch (Exception|\Throwable $e) {
 			}
 		}
 		return new TemplateResponse('', '403', [], TemplateResponse::RENDER_AS_ERROR, Http::STATUS_FORBIDDEN);
@@ -64,7 +69,10 @@ class AssistantController extends Controller {
 				$this->userId,
 				''
 			);
-			$this->initialStateService->provideInitialState('task', $task->jsonSerialize());
+			$serializedTask = $task->jsonSerialize();
+			// otherwise the task id is 0 and the default input shape values are not set
+			$serializedTask['id'] = null;
+			$this->initialStateService->provideInitialState('task', $serializedTask);
 			return new TemplateResponse(Application::APP_ID, 'assistantPage');
 		}
 		return new TemplateResponse('', '403', [], TemplateResponse::RENDER_AS_ERROR, Http::STATUS_FORBIDDEN);

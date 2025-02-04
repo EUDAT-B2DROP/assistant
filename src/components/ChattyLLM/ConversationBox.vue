@@ -1,6 +1,10 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="convo-box">
-		<NoSession v-if="messages == null"
+		<NoSession v-if="messages === null"
 			:name="t('assistant', 'Error loading messages')"
 			description="Please try again later.">
 			<template #icon>
@@ -8,7 +12,7 @@
 			</template>
 		</NoSession>
 		<NoSession v-else-if="loading.initialMessages"
-			:name="t('assistant', 'Loading messages...')"
+			:name="t('assistant', 'Loading messages…')"
 			description="">
 			<template #icon>
 				<NcLoadingIcon />

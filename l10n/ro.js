@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "User not found" : "Utilizatorul nu a fost găsit",
     "Close" : "Închide",
+    "Cancel" : "Anulare",
     "Delete" : "Șterge",
     "Edit title" : "Editează titlul",
     "Cancel editing" : "Anulează editarea",
@@ -10,7 +11,6 @@ OC.L10N.register(
     "You" : "Tu",
     "Delete message" : "Șterge mesajul",
     "Choose" : "Alege",
-    "Cancel" : "Anulare",
     "Cancelled" : "Anulat",
     "Failed" : "Eșuat",
     "Running" : "Alergat",

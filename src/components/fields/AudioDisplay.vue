@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<audio :src="audioUrl"
 		controls />
@@ -37,6 +41,7 @@ export default {
 
 	computed: {
 		audioUrl() {
+			// TODO, when we have task types with audio output, maybe switch to the assistant endpoint to get file with correct mimetype
 			return this.isOutput
 				? generateOcsUrl('taskprocessing/tasks/{taskId}/file/{fileId}?requesttoken={rToken}', {
 					taskId: this.providedCurrentTaskId(),

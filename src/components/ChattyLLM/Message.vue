@@ -1,5 +1,10 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
-	<div class="message"
+	<div v-if="message.content"
+		class="message"
 		@mouseover="showMessageActions = true"
 		@mouseleave="showMessageActions = false">
 		<MessageActions v-show="showMessageActions"
@@ -34,6 +39,7 @@
 			:reference-limit="1"
 			:autolink="true" />
 	</div>
+	<div v-else />
 </template>
 
 <script>
@@ -42,7 +48,7 @@ import AssistantIcon from '../icons/AssistantIcon.vue'
 import NcAvatar from '@nextcloud/vue/dist/Components/NcAvatar.js'
 import NcDateTime from '@nextcloud/vue/dist/Components/NcDateTime.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import NcRichText from '@nextcloud/vue/dist/Components/NcRichText.js'
+import { NcRichText } from '@nextcloud/vue/dist/Components/NcRichText.js'
 
 import MessageActions from './MessageActions.vue'
 

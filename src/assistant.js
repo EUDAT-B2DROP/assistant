@@ -1,10 +1,11 @@
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 import { TASK_STATUS_STRING } from './constants.js'
-import { linkTo } from '@nextcloud/router'
-import { getRequestToken } from '@nextcloud/auth'
 import { showError } from '@nextcloud/dialogs'
 
-__webpack_nonce__ = btoa(getRequestToken()) // eslint-disable-line
-__webpack_public_path__ = linkTo('assistant', 'js/') // eslint-disable-line
 window.assistantPollTimerId = null
 
 // TODO add param to lock on specific task type
@@ -50,8 +51,8 @@ export async function openAssistantForm({
 	isInsideViewer = undefined, closeOnResult = false, actionButtons = undefined,
 	customId = '', identifier = '',
 }) {
-	const { default: Vue } = await import(/* webpackChunkName: "vue-lazy" */'vue')
-	const { default: AssistantTextProcessingModal } = await import(/* webpackChunkName: "assistant-modal-lazy" */'./components/AssistantTextProcessingModal.vue')
+	const { default: Vue } = await import('vue')
+	const { default: AssistantTextProcessingModal } = await import('./components/AssistantTextProcessingModal.vue')
 	Vue.mixin({ methods: { t, n } })
 
 	// fallback to the last used one
@@ -104,7 +105,7 @@ export async function openAssistantForm({
 								view.selectedTaskId = finishedTask?.id
 							}
 						} else if (finishedTask.status === TASK_STATUS_STRING.failed) {
-							showError(t('assistant', 'Your task has failed'))
+							showError(t('assistant', 'Your task with ID {id} has failed', { id: finishedTask.id }))
 							console.error('[assistant] Task failed', finishedTask)
 							view.outputs = null
 						}
@@ -127,12 +128,13 @@ export async function openAssistantForm({
 			syncSubmit(data.inputs, data.selectedTaskTypeId, customId || identifier)
 		})
 		view.$on('try-again', (task) => {
-			syncSubmit(task.input, task.taskType)
+			console.debug('[assistant] try again', task)
+			syncSubmit(task.input, task.type)
 		})
 		view.$on('load-task', (task) => {
 			if (!view.loading) {
 				console.debug('[assistant] loading task', task)
-				view.selectedTaskTypeId = task.taskType
+				view.selectedTaskTypeId = task.type
 				view.inputs = task.input
 				view.outputs = task.status === TASK_STATUS_STRING.successful ? task.output : null
 				view.selectedTaskId = task.id
@@ -159,6 +161,13 @@ export async function openAssistantForm({
 				data.button.onClick(lastTask)
 			}
 			view.$destroy()
+		})
+		view.$on('back-to-assistant', () => {
+			view.showScheduleConfirmation = false
+			view.showSyncTaskRunning = false
+			view.loading = false
+			view.outputs = null
+			lastTask = null
 		})
 	})
 }
@@ -197,22 +206,22 @@ export async function cancelTaskPolling() {
 
 export async function getTask(taskId) {
 	window.assistantAbortController = new AbortController()
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateOcsUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateOcsUrl } = await import('@nextcloud/router')
 	const url = generateOcsUrl('taskprocessing/task/{taskId}', { taskId })
 	return axios.get(url, { signal: window.assistantAbortController.signal })
 }
 
 export async function setNotifyReady(taskId) {
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateOcsUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateOcsUrl } = await import('@nextcloud/router')
 	const url = generateOcsUrl('/apps/assistant/api/v1/task/{taskId}/notify', { taskId })
 	return axios.post(url, {})
 }
 
 export async function cancelTask(taskId) {
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateOcsUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateOcsUrl } = await import('@nextcloud/router')
 	const url = generateOcsUrl('taskprocessing/task/{taskId}', { taskId })
 	return axios.delete(url, {})
 }
@@ -228,9 +237,12 @@ export async function cancelTask(taskId) {
  */
 export async function scheduleTask(appId, customId, taskType, inputs) {
 	window.assistantAbortController = new AbortController()
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateOcsUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateOcsUrl } = await import('@nextcloud/router')
 	saveLastSelectedTaskType(taskType)
+	if (taskType === 'core:text2text:translate') {
+		saveLastTargetLanguage(inputs.target_language)
+	}
 	const url = generateOcsUrl('taskprocessing/schedule')
 	const params = {
 		input: inputs,
@@ -242,8 +254,8 @@ export async function scheduleTask(appId, customId, taskType, inputs) {
 }
 
 async function saveLastSelectedTaskType(taskType) {
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateUrl } = await import('@nextcloud/router')
 
 	const req = {
 		values: {
@@ -255,8 +267,8 @@ async function saveLastSelectedTaskType(taskType) {
 }
 
 async function getLastSelectedTaskType() {
-	const { default: axios } = await import(/* webpackChunkName: "axios-lazy" */'@nextcloud/axios')
-	const { generateUrl } = await import(/* webpackChunkName: "router-gen-lazy" */'@nextcloud/router')
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateUrl } = await import('@nextcloud/router')
 
 	const req = {
 		params: {
@@ -265,6 +277,21 @@ async function getLastSelectedTaskType() {
 	}
 	const url = generateUrl('/apps/assistant/config')
 	return axios.get(url, req)
+}
+
+async function saveLastTargetLanguage(targetLanguage) {
+	OCA.Assistant.last_target_language = targetLanguage
+
+	const { default: axios } = await import('@nextcloud/axios')
+	const { generateUrl } = await import('@nextcloud/router')
+
+	const req = {
+		values: {
+			last_target_language: targetLanguage,
+		},
+	}
+	const url = generateUrl('/apps/assistant/config')
+	return axios.put(url, req)
 }
 
 /**
@@ -316,10 +343,10 @@ async function showAssistantTaskResult(taskId) {
  * @return {Promise<void>}
  */
 export async function openAssistantTask(task, { isInsideViewer = undefined, actionButtons = undefined } = {}) {
-	const { default: Vue } = await import(/* webpackChunkName: "vue-lazy" */'vue')
+	const { default: Vue } = await import('vue')
 	Vue.mixin({ methods: { t, n } })
-	const { showError } = await import(/* webpackChunkName: "dialogs-lazy" */'@nextcloud/dialogs')
-	const { default: AssistantTextProcessingModal } = await import(/* webpackChunkName: "assistant-modal-lazy" */'./components/AssistantTextProcessingModal.vue')
+	const { showError } = await import('@nextcloud/dialogs')
+	const { default: AssistantTextProcessingModal } = await import('./components/AssistantTextProcessingModal.vue')
 
 	const modalId = 'assistantTextProcessingModal'
 	const modalElement = document.createElement('div')
@@ -370,7 +397,7 @@ export async function openAssistantTask(task, { isInsideViewer = undefined, acti
 						view.outputs = finishedTask?.output
 						view.selectedTaskId = finishedTask?.id
 					} else if (finishedTask.status === TASK_STATUS_STRING.failed) {
-						showError(t('assistant', 'Your task has failed'))
+						showError(t('assistant', 'Your task with ID {id} has failed', { id: finishedTask.id }))
 						console.error('[assistant] Task failed', finishedTask)
 						view.outputs = null
 					}
@@ -393,11 +420,11 @@ export async function openAssistantTask(task, { isInsideViewer = undefined, acti
 		syncSubmit(data.inputs, data.selectedTaskTypeId, task.identifier ?? '')
 	})
 	view.$on('try-again', (task) => {
-		syncSubmit(task.input, task.taskType)
+		syncSubmit(task.input, task.type)
 	})
 	view.$on('load-task', (task) => {
 		if (!view.loading) {
-			view.selectedTaskTypeId = task.taskType
+			view.selectedTaskTypeId = task.type
 			view.inputs = task.input
 			view.outputs = task.status === TASK_STATUS_STRING.successful ? task.output : null
 			view.selectedTaskId = task.id
@@ -423,6 +450,13 @@ export async function openAssistantTask(task, { isInsideViewer = undefined, acti
 		}
 		view.$destroy()
 	})
+	view.$on('back-to-assistant', () => {
+		view.showScheduleConfirmation = false
+		view.showSyncTaskRunning = false
+		view.loading = false
+		view.outputs = null
+		lastTask = null
+	})
 }
 
 export async function addAssistantMenuEntry() {
@@ -432,8 +466,8 @@ export async function addAssistantMenuEntry() {
 	menuEntry.id = 'assistant'
 	headerRight.prepend(menuEntry)
 
-	const { default: Vue } = await import(/* webpackChunkName: "vue-lazy" */'vue')
-	const { default: AssistantHeaderMenuEntry } = await import(/* webpackChunkName: "assistant-header-lazy" */'./components/AssistantHeaderMenuEntry.vue')
+	const { default: Vue } = await import('vue')
+	const { default: AssistantHeaderMenuEntry } = await import('./components/AssistantHeaderMenuEntry.vue')
 	Vue.mixin({ methods: { t, n } })
 
 	const View = Vue.extend(AssistantHeaderMenuEntry)

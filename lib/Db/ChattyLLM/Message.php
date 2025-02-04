@@ -3,24 +3,8 @@
 declare(strict_types=1);
 
 /**
- * @copyright Copyright (c) 2024 Anupam Kumar <kyteinsky@gmail.com>
- *
- * @author Anupam Kumar <kyteinsky@gmail.com>
- *
- * @license GNU AGPL version 3 or any later version
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 namespace OCA\Assistant\Db\ChattyLLM;
@@ -37,6 +21,8 @@ use OCP\DB\Types;
  * @method \void setContent(string $content)
  * @method \int getTimestamp()
  * @method \void setTimestamp(int $timestamp)
+ * @method \int getOcpTaskId()
+ * @method \void setOcpTaskId(int $ocpTaskId)
  */
 class Message extends Entity implements \JsonSerializable {
 	/** @var int */
@@ -47,6 +33,8 @@ class Message extends Entity implements \JsonSerializable {
 	protected $content;
 	/** @var int */
 	protected $timestamp;
+	/** @var int */
+	protected $ocpTaskId;
 
 	public static $columns = [
 		'id',
@@ -54,6 +42,7 @@ class Message extends Entity implements \JsonSerializable {
 		'role',
 		'content',
 		'timestamp',
+		'ocp_task_id',
 	];
 	public static $fields = [
 		'id',
@@ -61,6 +50,7 @@ class Message extends Entity implements \JsonSerializable {
 		'role',
 		'content',
 		'timestamp',
+		'ocpTaskId',
 	];
 
 	public function __construct() {
@@ -68,6 +58,7 @@ class Message extends Entity implements \JsonSerializable {
 		$this->addType('role', Types::STRING);
 		$this->addType('content', Types::STRING);
 		$this->addType('timestamp', Types::INTEGER);
+		$this->addType('ocp_task_id', Types::INTEGER);
 	}
 
 	#[\ReturnTypeWillChange]
@@ -78,6 +69,7 @@ class Message extends Entity implements \JsonSerializable {
 			'role' => $this->role,
 			'content' => $this->content,
 			'timestamp' => $this->timestamp,
+			'ocp_task_id' => $this->ocpTaskId,
 		];
 	}
 }

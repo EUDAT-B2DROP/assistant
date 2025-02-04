@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Service;
 
 use DateTime;
@@ -173,16 +178,18 @@ class AssistantService {
 		}
 		/** @var string $typeId */
 		foreach ($availableTaskTypes as $typeId => $taskTypeArray) {
-			// skip chat task type (not directly useful to the end user)
-			if ($typeId === TextToTextChat::ID) {
-				continue;
+			// skip chat, chat with tools and ContextAgent task types (not directly useful to the end user)
+			if (!self::DEBUG) {
+				if (class_exists('OCP\\TaskProcessing\\TaskTypes\\TextToTextChatWithTools')
+					&& $typeId === \OCP\TaskProcessing\TaskTypes\TextToTextChatWithTools::ID) {
+					continue;
+				}
+				if (class_exists('OCP\\TaskProcessing\\TaskTypes\\ContextAgentInteraction')
+					&& $typeId === \OCP\TaskProcessing\TaskTypes\ContextAgentInteraction::ID) {
+					continue;
+				}
 			}
-			$taskTypeArray['id'] = $typeId;
-			$taskTypeArray['priority'] = self::TASK_TYPE_PRIORITIES[$typeId] ?? 1000;
-
-			if ($typeId === TextToText::ID) {
-				$taskTypeArray['name'] = $this->l10n->t('Generate text');
-				$taskTypeArray['description'] = $this->l10n->t('Send a request to the Assistant, for example: write a first draft of a presentation, give me suggestions for a presentation, write a draft reply to my colleague.');
+			if ($typeId === TextToTextChat::ID) {
 				// add the chattyUI virtual task type
 				$types[] = [
 					'id' => 'chatty-llm',
@@ -198,6 +205,17 @@ class AssistantService {
 					'optionalOutputShape' => [],
 					'priority' => self::TASK_TYPE_PRIORITIES['chatty-llm'] ?? 1000,
 				];
+				// do not add the raw TextToTextChat type
+				if (!self::DEBUG) {
+					continue;
+				}
+			}
+			$taskTypeArray['id'] = $typeId;
+			$taskTypeArray['priority'] = self::TASK_TYPE_PRIORITIES[$typeId] ?? 1000;
+
+			if ($typeId === TextToText::ID) {
+				$taskTypeArray['name'] = $this->l10n->t('Generate text');
+				$taskTypeArray['description'] = $this->l10n->t('Send a request to the Assistant, for example: write a first draft of a presentation, give me suggestions for a presentation, write a draft reply to my colleague.');
 			}
 			$types[] = $taskTypeArray;
 		}
@@ -485,81 +503,35 @@ class AssistantService {
 	 * @throws NotPermittedException
 	 * @throws TaskProcessingException
 	 */
-	public function getOutputFilePreviewFile(string $userId, int $taskId, int $fileId): ?array {
+	public function getOutputFilePreviewFile(string $userId, int $taskId, int $fileId, ?int $x = 100, ?int $y = 100): ?array {
 		$taskOutputFile = $this->getTaskOutputFile($userId, $taskId, $fileId);
 		$realMime = mime_content_type($taskOutputFile->fopen('rb'));
-		return $this->previewService->getFilePreviewFile($taskOutputFile, 100, 100, $realMime ?: null);
-	}
-
-	/**
-	 * Sanitize inputs for storage based on the input type
-	 *
-	 * @param string $type
-	 * @param array $inputs
-	 * @return array
-	 * @throws \Exception
-	 */
-	private function sanitizeInputs(string $type, array $inputs): array {
-		switch ($type) {
-			case 'copywriter':
-				{
-					// Sanitize the input array based on the allowed keys and making sure all inputs are strings:
-					$inputs = array_filter($inputs, function ($value, $key) {
-						return in_array($key, ['writingStyle', 'sourceMaterial']) && is_string($value);
-					}, ARRAY_FILTER_USE_BOTH);
-
-					if (count($inputs) !== 2) {
-						throw new \Exception('Invalid input(s)');
-					}
-					break;
-				}
-			case 'OCA\\ContextChat\\TextProcessing\\ContextChatTaskType':
-				{
-					if ((count($inputs) !== 1 && count($inputs) !== 4)
-						|| !isset($inputs['prompt'])
-						|| !is_string($inputs['prompt'])
-					) {
-						throw new \Exception('Invalid input(s)');
-					}
-
-					if (count($inputs) === 4) {
-						if (!isset($inputs['scopeType']) || !is_string($inputs['scopeType'])
-							|| !isset($inputs['scopeList']) || !is_array($inputs['scopeList'])
-							|| !isset($inputs['scopeListMeta']) || !is_array($inputs['scopeListMeta'])) {
-							throw new \Exception('Invalid input(s)');
-						}
-					}
-
-					break;
-				}
-			default:
-				{
-					if (!is_string($inputs['prompt']) || count($inputs) !== 1) {
-						throw new \Exception('Invalid input(s)');
-					}
-					break;
-				}
-		}
-		return $inputs;
+		return $this->previewService->getFilePreviewFile($taskOutputFile, $x, $y, $realMime ?: null);
 	}
 
 	/**
 	 * Parse text from file (if parsing the file type is supported)
-	 * @param string $filePath
 	 * @param string $userId
+	 * @param string|null $filePath
+	 * @param int|null $fileId
 	 * @return string
-	 * @throws \Exception
+	 * @throws NotPermittedException
+	 * @throws \OCP\Files\NotFoundException
 	 */
-	public function parseTextFromFile(string $filePath, string $userId): string {
+	public function parseTextFromFile(string $userId, ?string $filePath = null, ?int $fileId = null): string {
 
 		try {
 			$userFolder = $this->rootFolder->getUserFolder($userId);
-		} catch (\OC\User\NoUserException | NotPermittedException $e) {
+		} catch (\OC\User\NoUserException|NotPermittedException $e) {
 			throw new \Exception('Could not access user storage.');
 		}
 
 		try {
-			$file = $userFolder->get($filePath);
+			if ($filePath !== null) {
+				$file = $userFolder->get($filePath);
+			} else {
+				$file = $userFolder->getFirstNodeById($fileId);
+			}
 		} catch (NotFoundException $e) {
 			throw new \Exception('File not found.');
 		}
@@ -570,7 +542,7 @@ class AssistantService {
 			} else {
 				throw new \Exception('Provided path does not point to a file.');
 			}
-		} catch (LockedException | GenericFileException | NotPermittedException $e) {
+		} catch (LockedException|GenericFileException|NotPermittedException $e) {
 			throw new \Exception('File could not be accessed.');
 		}
 

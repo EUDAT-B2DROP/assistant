@@ -1,12 +1,15 @@
 <?php
 
 declare(strict_types=1);
-// SPDX-FileCopyrightText: Julien Veyssier <julien-nc@posteo.net>
-// SPDX-License-Identifier: AGPL-3.0-or-later
+/**
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 
 namespace OCA\Assistant\Db;
 
 use OCP\AppFramework\Db\Entity;
+use OCP\DB\Types;
 
 /**
  * @method \int getOcpTaskId()
@@ -22,8 +25,8 @@ class TaskNotification extends Entity implements \JsonSerializable {
 
 
 	public function __construct() {
-		$this->addType('ocp_task_id', 'int');
-		$this->addType('timestamp', 'int');
+		$this->addType('ocp_task_id', Types::INTEGER);
+		$this->addType('timestamp', Types::INTEGER);
 	}
 
 	#[\ReturnTypeWillChange]

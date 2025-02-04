@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 app_name=assistant
 app_version=$(version)
 project_dir=.
@@ -81,6 +83,7 @@ appstore: clean
 	--exclude=/src \
 	--exclude=translationfiles \
 	--exclude=webpack.* \
+	--exclude=/vite.* \
 	--exclude=stylelint.config.js \
 	--exclude=.eslintrc.js \
 	--exclude=.github \

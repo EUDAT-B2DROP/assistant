@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Service;
 
 use DateTime;
@@ -52,7 +57,7 @@ class NotificationService {
 		$notification->setApp(Application::APP_ID)
 			->setUser($task->getUserId())
 			->setDateTime(new DateTime())
-			->setObject($objectType, (string) ($task->getId() ?? 0))
+			->setObject($objectType, (string)($task->getId() ?? 0))
 			->setSubject($subject, $params);
 
 		$manager->notify($notification);

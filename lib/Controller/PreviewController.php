@@ -1,12 +1,8 @@
 <?php
+
 /**
- * Nextcloud - Assistant
- *
- * This file is licensed under the Affero General Public License version 3 or
- * later. See the COPYING file.
- *
- * @author Julien Veyssier <julien-nc@posteo.net>
- * @copyright Julien Veyssier 2022
+ * SPDX-FileCopyrightText: 2022 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 namespace OCA\Assistant\Controller;
@@ -34,7 +30,7 @@ class PreviewController extends Controller {
 		IRequest $request,
 		private PreviewService $imageService,
 		private LoggerInterface $logger,
-		private ?string  $userId
+		private ?string $userId,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -64,7 +60,7 @@ class PreviewController extends Controller {
 			} elseif ($preview['type'] === 'icon') {
 				return new RedirectResponse($preview['icon']);
 			}
-		} catch (Exception | Throwable $e) {
+		} catch (Exception|Throwable $e) {
 			$this->logger->error('getImage error', ['exception' => $e]);
 			return new DataResponse('', Http::STATUS_NOT_FOUND);
 		}

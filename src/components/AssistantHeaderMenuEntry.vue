@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div id="assistant"
 		class="header-menu">
@@ -70,7 +74,7 @@ export default {
 			background-color: rgba(0,0,0,0) !important;
 		}
 		.menu-icon {
-			color: var(--color-primary-text) !important;
+			color: var(--color-background-plain-text) !important;
 		}
 	}
 }

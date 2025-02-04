@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\Assistant\Notification;
 
 use InvalidArgumentException;
@@ -93,12 +98,20 @@ class Notifier implements INotifier {
 				// Catch the custom copywriter task type built on top of the FreePrompt task type.
 				$taskTypeName = $l->t('AI context writer');
 				$taskInput = $l->t('Writing style: %1$s; Source material: %2$s', [$params['inputs']['writingStyle'], $params['inputs']['sourceMaterial']]);
+			} elseif (
+				$params['taskTypeId'] === 'context_chat:context_chat'
+				|| $params['taskTypeId'] === 'legacy:TextProcessing:OCA\ContextChat\TextProcessing\ContextChatTaskType'
+			) {
+				$taskInput = $params['inputs']['prompt'] ?? null;
+				$taskTypeName = $l->t('Context Chat');
 			} else {
 				$availableTaskTypes = $this->taskProcessingManager->getAvailableTaskTypes();
-				$taskType = $availableTaskTypes[$params['taskTypeId']];
-				$taskTypeName = $taskType['name'];
+				if (isset($availableTaskTypes[$params['taskTypeId']])) {
+					$taskType = $availableTaskTypes[$params['taskTypeId']];
+					$taskTypeName = $taskType['name'];
+				}
 			}
-		} catch (\Exception | \Throwable $e) {
+		} catch (\Exception|\Throwable $e) {
 			$this->logger->debug('Impossible to get task type ' . $params['taskTypeId'], ['exception' => $e]);
 		}
 

@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="text-input">
 		<label :for="id">
@@ -191,6 +195,16 @@ export default {
 </script>
 
 <style lang="scss">
+.choose-file-button {
+	right: 2px;
+	left: unset;
+}
+
+body[dir="rtl"] .choose-file-button {
+	left: 2px;
+	right: unset;
+}
+
 .text-input {
 	position: relative;
 
@@ -201,7 +215,6 @@ export default {
 
 	.choose-file-button {
 		bottom: 2px;
-		right: 2px;
 	}
 
 	.copy-button {
