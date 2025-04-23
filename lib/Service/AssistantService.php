@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
 use RtfHtmlPhp\Document;
 use RtfHtmlPhp\Html\HtmlFormatter;
 use RuntimeException;
+use Smalot\PdfParser\Parser;
 
 /**
  * @psalm-import-type AssistantTaskProcessingTaskType from ResponseDefinitions
@@ -438,19 +439,16 @@ class AssistantService {
 	 * @throws NotPermittedException
 	 */
 	private function getTargetFileName(File $file): string {
-		$mime = mime_content_type($file->fopen('rb'));
-		$name = $file->getName();
-		$ext = '';
-		if ($mime === 'image/png') {
-			$ext = '.png';
-		} elseif ($mime === 'image/jpeg') {
-			$ext = '.jpg';
-		}
+		$mimeType = mime_content_type($file->fopen('rb'));
+		$fileName = $file->getName();
 
-		if (str_ends_with($name, $ext)) {
-			return $name;
+		$mimes = new \Mimey\MimeTypes;
+
+		$extension = $mimes->getExtension($mimeType);
+		if (is_string($extension) && $extension !== '' && !str_ends_with($fileName, $extension)) {
+			return $fileName . '.' . $extension;
 		}
-		return $name . $ext;
+		return $fileName;
 	}
 
 	/**
@@ -577,6 +575,13 @@ class AssistantService {
 					file_put_contents($tempFilePath, $fileContent);
 					$text = $this->parseDocument($tempFilePath, $mimeType);
 					$this->tempManager->clean();
+					break;
+				}
+			case 'application/pdf':
+				{
+					$parser = new Parser();
+					$pdf = $parser->parseContent($fileContent);
+					$text = $pdf->getText();
 					break;
 				}
 		}
