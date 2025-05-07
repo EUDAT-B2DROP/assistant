@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Send an email" : "שליחת דוא״ל",
     "User not found" : "המשתמש לא נמצא",
+    "Nextcloud Mail" : "דוא״ל Nextcloud",
     "Try again" : "ניסיון חוזר",
     "Close" : "סגירה",
     "Less" : "פחות:",
@@ -12,6 +13,7 @@ OC.L10N.register(
     "Edit title" : "עריכת כותרת",
     "Submit" : "שליחה",
     "Choose" : "בחר",
+    "This may take a few seconds…" : "פעולה זו עשויה לארוך מספר שניות…",
     "Cancelled" : "בוטל",
     "Running" : "ריצה",
     "Result" : "תוצאה",

@@ -7,7 +7,6 @@
 		:size="modalSize"
 		:can-close="false"
 		:name="t('assistant', 'Nextcloud Assistant')"
-		container="#content"
 		dark
 		class="assistant-modal"
 		@close="onCancel">
@@ -27,6 +26,7 @@
 					v-if="showSyncTaskRunning"
 					:description="shortInput"
 					:progress="progress"
+					:expected-runtime="expectedRuntime"
 					@background-notify="$emit('background-notify')"
 					@cancel="$emit('cancel-task')"
 					@back="onBackToAssistant" />
@@ -109,6 +109,10 @@ export default {
 			default: false,
 		},
 		progress: {
+			type: [Number, null],
+			default: null,
+		},
+		expectedRuntime: {
 			type: [Number, null],
 			default: null,
 		},

@@ -40,12 +40,22 @@
 				@try-again="onHistoryTryAgain"
 				@load-task="onHistoryLoadTask" />
 		</div>
+		<div v-else-if="mySelectedTaskTypeId === 'core:text2text:translate'"
+			class="task-input-output-form">
+			<TranslateForm v-if="selectedTaskType"
+				:inputs.sync="myInputs"
+				:outputs.sync="myOutputs"
+				:translate-task-id="selectedTaskId"
+				:translate-task-type="selectedTaskType"
+				:show-advanced.sync="showAdvanced" />
+		</div>
 		<div v-else class="task-input-output-form">
 			<AssistantFormInputs v-if="selectedTaskType"
 				:inputs.sync="myInputs"
 				:selected-task-id="selectedTaskId"
 				:selected-task-type="selectedTaskType"
-				:show-advanced.sync="showAdvanced" />
+				:show-advanced.sync="showAdvanced"
+				@submit="onSyncSubmit" />
 			<AssistantFormOutputs v-if="hasOutput"
 				:inputs="myInputs"
 				:outputs.sync="myOutputs"
@@ -155,6 +165,7 @@ import AssistantFormOutputs from './AssistantFormOutputs.vue'
 import NoProviderEmptyContent from './NoProviderEmptyContent.vue'
 import TaskList from './TaskList.vue'
 import TaskTypeSelect from './TaskTypeSelect.vue'
+import TranslateForm from './Translate/TranslateForm.vue'
 
 import { SHAPE_TYPE_NAMES } from '../constants.js'
 
@@ -174,6 +185,7 @@ export default {
 		NoProviderEmptyContent,
 		TaskList,
 		TaskTypeSelect,
+		TranslateForm,
 		NcButton,
 		NcLoadingIcon,
 		NcIconSvgWrapper,
