@@ -320,9 +320,12 @@ class ChattyLLMController extends OCSController {
 	#[OpenAPI(scope: OpenAPI::SCOPE_DEFAULT, tags: ['chat_api'])]
 	public function getSessions(): JSONResponse {
 		try {
-			/** @var list<AssistantChatSession> $sessions */
 			$sessions = $this->chatService->getSessionsForUser($this->userId);
-			return new JSONResponse($sessions);
+			/** @var list<AssistantChatSession> $serializedSessions */
+			$serializedSessions = array_map(static function ($session) {
+				return $session->jsonSerialize();
+			}, $sessions);
+			return new JSONResponse($serializedSessions);
 		} catch (InternalException $e) {
 			$this->logger->warning('Failed to get chat sessions', ['exception' => $e]);
 			return new JSONResponse(['error' => $this->l10n->t('Failed to get chat sessions')], Http::STATUS_INTERNAL_SERVER_ERROR);

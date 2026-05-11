@@ -11,6 +11,7 @@ use OCA\Assistant\Db\Assignment;
 use OCA\Assistant\Db\AssignmentMapper;
 use OCA\Assistant\ResponseDefinitions;
 use OCA\Assistant\Service\AssignmentsService;
+use OCA\Assistant\Service\BadRequestException;
 use OCA\Assistant\Service\InternalException;
 use OCA\Assistant\Service\UnauthorizedException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -47,10 +48,11 @@ class AssignmentsApiController extends OCSController {
 	 * @param string $prompt The prompt to be sent to the assistant when the assignment is executed
 	 * @param int $startsAt The timestamp when the assignment should start being executed
 	 * @param string $recurrence The recurrence rule for the assignment, in RRULE format (e.g. "FREQ=DAILY;INTERVAL=1" for a daily assignment)
-	 * @return DataResponse<Http::STATUS_OK, array{assignment: AssistantAssignment}, array{}>|DataResponse<Http::STATUS_FORBIDDEN|Http::STATUS_INTERNAL_SERVER_ERROR, '', array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{assignment: AssistantAssignment}, array{}>|DataResponse<Http::STATUS_FORBIDDEN|Http::STATUS_INTERNAL_SERVER_ERROR|Http::STATUS_BAD_REQUEST, '', array{}>
 	 *
 	 * 200: User assignments returned
 	 * 403: User not logged in
+	 * 400: Validation error
 	 */
 	#[NoAdminRequired]
 	#[OpenAPI(scope: OpenAPI::SCOPE_DEFAULT, tags: ['assignments'])]
@@ -65,6 +67,8 @@ class AssignmentsApiController extends OCSController {
 			return new DataResponse('', Http::STATUS_INTERNAL_SERVER_ERROR);
 		} catch (UnauthorizedException $e) {
 			return new DataResponse('', Http::STATUS_FORBIDDEN);
+		} catch (BadRequestException $e) {
+			return new DataResponse('', Http::STATUS_BAD_REQUEST);
 		}
 	}
 
@@ -103,7 +107,7 @@ class AssignmentsApiController extends OCSController {
 	 *
 	 * @param int $id The id of the assignment to return
 	 *
-	 * @return DataResponse<Http::STATUS_OK, array{assignment: AssistantAssignment}, array{}>|DataResponse<Http::STATUS_FORBIDDEN|Http::STATUS_NOT_FOUND, '', array{}>
+	 * @return DataResponse<Http::STATUS_OK, array{assignment: AssistantAssignment}, array{}>|DataResponse<Http::STATUS_FORBIDDEN|Http::STATUS_NOT_FOUND|Http::STATUS_INTERNAL_SERVER_ERROR, '', array{}>
 	 *
 	 * 200: User tasks returned
 	 * 403: User not logged in
@@ -121,7 +125,7 @@ class AssignmentsApiController extends OCSController {
 				return new DataResponse(['assignment' => $serializedAssignment]);
 			} catch (Exception $e) {
 				$this->logger->error('Error while fetching assignment for user ' . $this->userId, ['exception' => $e]);
-				return new DataResponse('', Http::STATUS_FORBIDDEN);
+				return new DataResponse('', Http::STATUS_INTERNAL_SERVER_ERROR);
 			} catch (DoesNotExistException|MultipleObjectsReturnedException) {
 				return new DataResponse('', Http::STATUS_NOT_FOUND);
 			}
@@ -183,7 +187,7 @@ class AssignmentsApiController extends OCSController {
 	 * Delete a user's assignment
 	 *
 	 * @param int $id The id of the assignment to delete
-	 * @return DataResponse<Http::STATUS_OK, '', array{}>|DataResponse<Http::STATUS_FORBIDDEN, '', array{}>
+	 * @return DataResponse<Http::STATUS_OK, '', array{}>|DataResponse<Http::STATUS_FORBIDDEN|Http::STATUS_INTERNAL_SERVER_ERROR, '', array{}>
 	 *
 	 * 200: User assignment deleted or not found
 	 * 403: User not logged in
@@ -199,7 +203,7 @@ class AssignmentsApiController extends OCSController {
 				return new DataResponse('', Http::STATUS_OK);
 			} catch (Exception $e) {
 				$this->logger->error('Error while fetching assignment for user ' . $this->userId, ['exception' => $e]);
-				return new DataResponse('', Http::STATUS_FORBIDDEN);
+				return new DataResponse('', Http::STATUS_INTERNAL_SERVER_ERROR);
 			} catch (DoesNotExistException|MultipleObjectsReturnedException) {
 				// 200 OK because of idempotence, if we send DELETE twice, we return the same response twice
 				return new DataResponse('', Http::STATUS_OK);

@@ -14,6 +14,7 @@ use OCA\Assistant\Db\ChattyLLM\Session;
 use OCA\Assistant\Db\ChattyLLM\SessionMapper;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\Exception;
 use OCP\Exceptions\AppConfigTypeConflictException;
 use OCP\IAppConfig;
@@ -38,6 +39,7 @@ class ChatService {
 		private readonly SessionSummaryService $sessionSummaryService,
 		private readonly IManager $taskProcessingManager,
 		private readonly LoggerInterface $logger,
+		private readonly ITimeFactory $timeFactory,
 	) {
 	}
 
@@ -53,6 +55,8 @@ class ChatService {
 		if ($user === null) {
 			throw new UnauthorizedException($this->l10n->t('User not found'));
 		}
+
+		$timestamp ??= $this->timeFactory->now()->getTimestamp();
 
 		if ($timestamp > 10_000_000_000) {
 			$timestamp = intdiv($timestamp, 1000);
@@ -246,10 +250,12 @@ class ChatService {
 	 * @throws NotFoundException
 	 * @throws UnauthorizedException
 	 */
-	public function getSessionMessages(?string $userId, int $sessionId, $limit = 20, int $cursor = 0): array {
+	public function getSessionMessages(?string $userId, int $sessionId, int $limit = 20, int $cursor = 0): array {
 		if ($userId === null) {
 			throw new UnauthorizedException($this->l10n->t('Unauthorized'));
 		}
+
+		$Limit = max(1, $limit);
 
 		try {
 			$sessionExists = $this->sessionMapper->exists($userId, $sessionId);
