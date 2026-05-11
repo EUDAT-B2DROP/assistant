@@ -117,6 +117,7 @@ class AssistantService {
 			'find_details_of_current_user' => $this->l10n->t('Nextcloud user profile'),
 			'find_free_time_slot_in_calendar' => $this->l10n->t('Nextcloud Calendar'),
 			'find_person_in_contacts' => $this->l10n->t('Nextcloud Contacts'),
+			'find_person_in_users' => $this->l10n->t('Nextcloud User Search'),
 			'generate_document' => $this->l10n->t('Assistant document generation'),
 			'generate_image' => $this->l10n->t('Assistant image generation'),
 			'get_circle_details' => $this->l10n->t('Nextcloud Teams'),
