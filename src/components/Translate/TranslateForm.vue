@@ -206,10 +206,12 @@ export default {
 
 	.wrapper {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 16px;
 
 		.col {
-			width: 50%;
+			min-width: 300px;
+			flex-grow: 1;
 		}
 	}
 
