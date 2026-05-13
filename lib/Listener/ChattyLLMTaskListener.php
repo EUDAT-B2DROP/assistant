@@ -23,7 +23,7 @@ use OCP\TaskProcessing\Task;
 use Psr\Log\LoggerInterface;
 
 /**
- * @template-implements IEventListener<TaskSuccessfulEvent>
+ * @template-implements IEventListener<TaskSuccessfulEvent|TaskFailedEvent>
  */
 class ChattyLLMTaskListener implements IEventListener {
 
