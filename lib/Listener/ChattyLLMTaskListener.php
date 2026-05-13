@@ -17,6 +17,7 @@ use OCA\Assistant\Service\NotificationService;
 use OCA\Assistant\Service\TaskProcessingService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use OCP\TaskProcessing\Events\TaskFailedEvent;
 use OCP\TaskProcessing\Events\TaskSuccessfulEvent;
 use OCP\TaskProcessing\Task;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,21 @@ class ChattyLLMTaskListener implements IEventListener {
 	}
 
 	public function handle(Event $event): void {
+		if ($event instanceof TaskFailedEvent) {
+			$task = $event->getTask();
+			$customId = $task->getCustomId();
+			if (preg_match('/^chatty-llm:(\d+)/', $customId, $matches)) {
+				$sessionId = (int)$matches[1];
+				$session = $this->sessionMapper->getUserSession($task->getUserId(), $sessionId);
+				$assignmentId = $session->getAssignmentId();
+				if ($assignmentId !== null) {
+					$this->notificationService->sendAssignmentNotification(
+						$task->getUserId(), $task, $session
+					);
+				}
+			}
+			return;
+		}
 		if (!($event instanceof TaskSuccessfulEvent)) {
 			return;
 		}
