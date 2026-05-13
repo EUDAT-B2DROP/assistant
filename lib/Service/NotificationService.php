@@ -136,6 +136,9 @@ class NotificationService {
 	}
 
 	public function sendAssignmentNotification(?string $userId, Task $task, Session $session): void {
+		if ($userId === null) {
+			return;
+		}
 		$manager = $this->notificationManager;
 		$notification = $manager->createNotification();
 
