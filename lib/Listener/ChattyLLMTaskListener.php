@@ -13,6 +13,7 @@ use OCA\Assistant\AppInfo\Application;
 use OCA\Assistant\Db\ChattyLLM\Message;
 use OCA\Assistant\Db\ChattyLLM\MessageMapper;
 use OCA\Assistant\Db\ChattyLLM\SessionMapper;
+use OCA\Assistant\Service\NotificationService;
 use OCA\Assistant\Service\TaskProcessingService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -30,6 +31,7 @@ class ChattyLLMTaskListener implements IEventListener {
 		private SessionMapper $sessionMapper,
 		private TaskProcessingService $taskProcessingService,
 		private LoggerInterface $logger,
+		private NotificationService $notificationService,
 	) {
 	}
 
@@ -126,6 +128,13 @@ class ChattyLLMTaskListener implements IEventListener {
 			}
 			// Set flag that the conversation summary needs to be regenerated
 			$session->setIsSummaryUpToDate(false);
+
+			$assignmentId = $session->getAssignmentId();
+			if ($assignmentId !== null) {
+				$this->notificationService->sendAssignmentNotification(
+					$task->getUserId(), $task, $session
+				);
+			}
 
 			$this->sessionMapper->update($session);
 		}
